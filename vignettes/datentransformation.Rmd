@@ -1,0 +1,353 @@
+---
+title: "Datentransformation in R"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{datentransformation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Das tidy Prinzip
+
+Ein Begriff der bisher schon häufiger gefallen ist, ist _tidy_. Tidy bezieht sich dabei einerseits auf die Eigenschaft eines Datensatzes, eine bestimmte Form zu haben und andererseits auf Methoden, mit solchen Datensätzen zu arbeiten.
+
+Ein Datensatz ist tidy, wenn er folgende eigenschaften hat:
+
+  - jede *Variable* hat ihre eigene *Spalte*
+  - jede *Beobachtung* hat ihre eigene *Zeile*
+  - jeder Wert hat seine eigene Zelle
+
+Der folgende Beispieldatensatz ist tidy:
+
+```{r}
+library(tidyverse)
+table1
+```
+
+Die selben Daten könnten aber auch anders abgebildet werden:
+
+```{r}
+table2
+
+table3
+
+#oder ihr bekommt die Daten in zwei getrennten Tabellen (hallo Excel)
+table4a
+table4b
+```
+
+Wenn ihr schon einmal mit echten Daten gearbeitet habt, wie bspw. offiziellen Statistiken des Destatis, dann waren diese mit großer Wahrscheinlichkeit nicht tidy. Ein erheblicher Anteil der Arbeit mit echten Daten besteht darin, diese so umzuformen, dass man gut mit ihnen weiterarbeiten kann. Wir können uns diesen Teil größtenteils sparen, da die Twitter Daten, mit denen wir arbeiten werden, bereits tidy sind.
+
+## Das tidyverse
+
+Das tidyverse bezeichnet eine Sammlung von Paketen, die auf dem tidy-Prinzip beruhen. Schlüsselfigur und "Gesicht" des tidyverses ist Hadley Wickham (<https://en.wikipedia.org/wiki/Hadley_Wickham>), ein neuseeländischer Statistiker der hinter viele der grundlegenden Pakete selber geschrieben hat und als Koordinator des Projekts fungiert. Zusammen mit Garrett Grolemund hat der das "Standardwerk" der Data Science in R geschrieben ("R for Data Science") welches ich bereits verlinkt hatte (<https://r4ds.had.co.nz/>). Das Buch ist (zumindest in englischer Sprache) komplett kostenlos verfügbar und erklärt euch alles was ich euch im Folgenden erklären werde noch viel genauer und meiner Meinung nach didaktisch sehr gut. Einige der folgenden Beispiele sind basieren auf diesem Buch.
+
+Das tidyverse besteht mittlerweile aus über 20 einzelnen Paketen. Die prominentesten sind dabei:
+  
+  - readr: Enthält Funktionen um Daten einzulesen und zu speichern (ersetzen Basisfunktionen)
+  - tidyr: Enthält Funktionen um Daten in "tidy" Form zu bringen
+  - dplyr: Enthält Funktionen um Daten zu transformieren
+  - ggplot2: Framework für Datenvisualisierung
+  - magrittr: Enthält die _pipe_, mit der wir Funktionen aneinanderreihen können
+  
+Ebenso sind einige "kleinere" Pakete enthalten welche die Arbeit mit bestimmten Datentypen erleichtern (`stingr` für strings, `forcats` für Faktoren).
+
+Als ihr das tidyverse installiert bzw. in R geladen habt, habt ihr nicht die Pakete direkt geladen, sondern ein Paket, welches dann wiederum andere Pakete lädt. Der Zweck dahinter ist, dass Pakete, die sowieso sehr häufig im selben Script verwendet werden, nicht müßsam einzeln geladen werden müssten. Hierdurch ladet ihr aber nur einige Kern-Pakete, das sehr nützliche Paket `lubridate` wird zum beispiel nicht mitgeladen. Das müsst ihr dann manuell tun, oder ihr benutzt ` paket::funktionsname()` um bestimmte Funktionen zu benutzen ohne das gesamte Pakete zu laden.
+
+## tibble statt Dataframes
+
+Die Pakete des tidyverses basieren allesamt auf Daten in tabellarischer Form. Sie benutzen allerdings keine normalen R Dataframes, sondern sogenannte `tibble`. Tibble sind ein "superset" der Dataframes, d.h. alle Funktionen die mit Dataframes funktionieren, funktionieren auch mit tibblen. Aber sie haben einige Eigenschaften, welche die Arbeit mit ihnen erleichtern. Den größten Unterschied sieht man beim "printen" eines dataframes vs. tibbles. Vom ersteren werden immer die ersten 1000 Elemente geprintet, egal wie groß diese sind. Das kann bei großen Datensätzen im schlimmsten Fall euren gesamten Rechner lahmlegen! Bei tibbeln werden standardmäßig immer nur die ersten 10 Zeilen gedruckt und man bekommt eine Übersicht über alle Spalten und die Dimensionen des Datensatzes. Das ganze geht super schnell, egal wie groß der eigentliche Datensatz ist.
+
+
+
+## Das dplyr Paket
+
+Das dplyr Paket enthält Funktionen, die es uns ermöglichen Datensätze zu transformieren, d.h. Variablen zu selektieren, neue Variablen zu erstellen und Werte anhand bestimmter Kriterien auszuwählen und zu sortieren. Der Syntax verwendet dabei bestimmte *Verben*, welche an gängige *SQL* Befehle angelehnt sind. 
+
+Wir arbeiten heute mit einem Beispieldatensatz, welcher Daten zu Flügen aus New York City aus dem Jahre 2013 enthält. Dieser ist im Paket `nycflights13` enthalten:
+
+```{r}
+
+#install.packages("nycflights13")
+library(nycflights13)
+
+
+flights
+
+```
+
+
+## dplyr "Verben"
+
+### Variablen wählen mit select()
+
+Die `select()` Funktion erlaubt es uns, wie der Name schon ganz gut beschreibt, Variablen zu selektieren, also auszuwählen. Das erste Argument ist dabei immer ein Datenobjekt, gefolgt von den Namen der Variablen, die wir selektieren möchten. Die select Funktion modifiziert nie das Datenobjekt direkt, sondern erzeugt immer nur neue! Wenn ihr diese behalten möchtet, müsst ihr sie einem neuen Objekt zuweisen.
+
+
+```{r}
+library(tidyverse)
+
+#man kann einzelne Spalten/Variablen wählen
+select(flights, carrier, tailnum)
+select(flights, arr_time, sched_arr_time, arr_delay)
+
+#man kann auch Bereiche auswählen mit ":"
+select(flights, year:dep_delay)
+
+#man kann auch Variablen ausschließen, es werden dann alle anderen ausgegebene:
+select(flights, -year)
+select(flights, -(year:dep_time))
+
+```
+
+
+Gerade bei sehr großen Datensätzen mit vielen Variablen mit ähnlichen Namen kann es schwierig sein, genau die richtigen zu finden. Es gibt zum Glück Funktionen, die uns dabei helfen:
+
+```{r}
+#wähle Variablen die mit einer bestimmten Zeichenfolge anfangen:
+select(flights, starts_with("dep"))
+
+#wähle Variablen die mit einer bestimmten Zeichenfolge enden:
+select(flights, ends_with("time"))
+
+#wähle Variablen die mit eine bestimmten Zeichenfolge irgendwo enthalten:
+select(flights, contains("time"))
+
+#wähle Variablen mit Hilfe von regular expressions (machen wir hier nicht, die sind ein Albtraum):
+select(flights, matches("(.)\\1"))
+
+#Variablen werden oft durchnummeriert, bei deren Auswahl hilft num_range:
+select(as.data.frame(matrix(c(1,2,3,4,5,6,7,8,9), nrow=3,ncol=3)), num_range("V", 1:2))
+
+
+```
+Wenn ihr den gesamten Datensatz behalten möchtet, aber nur die Reihenfolge der Variablen verändern oder diese umbenennen wollt, könnt ihr das wie folgt tun:
+
+```{r}
+#Variablen umbenennen mit select lässt alle anderen Variablen fallen:
+select(flights, start_airport = origin)
+#merken: neuer Name steht links vom "="! Analog zur Zuweisung von Variablen
+
+#Wenn ihr das nicht wollt stattdessen die rename() Funktion verwenden:
+rename(flights, start_airport = origin)
+
+
+#Wenn ihr nur die Reihenfolge verändern wollt gibt es die Helferfunktion everything():
+select(flights, arr_time, arr_delay, everything())
+
+
+```
+
+***
+
+#### Aufgaben select()
+
+##### Aufgabe 3.1
+
+Ladet wieder den Twitch-Datensatz aus der letzten Stunde. Wählt alle Variablen die mit Zuschauern zu tun haben könnten.
+
+##### Aufgabe 3.2
+
+Benennt im Twitch Datensatz die missverständliche Variable "login" um, damit der Name aussagekräftiger wird.
+
+
+***
+
+
+### Beobachtungen wählen mit filter()
+
+Mit der `filter()` Funktion kann ich bestimmte *Zeilen* anhand verschiedener Kriterien ihrer Werte auswählen. Alle erdenklichen logischen Prüfungen sind dabei möglich:
+
+```{r}
+#nur Flüge, die im Dezember stattfanden:
+filter(flights, month == 12)
+#nur Flüge, die am 24. Dezember stattfanden:
+filter(flights, month == 12, day == 24)
+
+#nur Flüge, die mehr als 10 Minuten Verspätung hatten:
+filter(flights, arr_delay > 10)
+
+#nur Flüge, die vor 6 Uhr gelandet sind:
+filter(flights, arr_time < 600)
+
+```
+
+Zeilen anhand von mehreren Konditionen auswählen ist also ganz einfach durch eine Auflistung der Prüfungen, getrennt durch Kommata, möglich. Was ist aber, wenn ich mehrere Konditionen habe, die die selbe Variable betreffen?
+
+```{r}
+#ich möchte Alle Flüge haben, die im Dezember oder Januar stattgefunden haben. So funktioniert es nicht:
+filter(flights, month == 12, month == 1)
+
+#stattdessen brauche ich den "oder" Operator: |
+filter(flights, month == 12 | month == 1)
+
+#ich persönlich benutze für solche Fälle lieber den %in% Operator:
+filter(flights, month%in% c(1,12))
+
+#wenn nicht diskrete Ereignisse geprüft werden sollen, sondern Bereiche, lassen sich viele "oder" Prüfungen in "und"-Prüfungen umdenken:
+
+filter(flights, !(arr_time > 600 | arr_delay > 30))
+
+filter(flights, arr_time <= 600, arr_delay <= 30)
+
+
+
+```
+
+***
+
+### Aufgaben filter()
+
+#### Aufgabe 3.3
+
+Wir betrachten wieder den Twitch Datensatz. Wählt alle Streams aus, die vom Streamer "ninja" gestreamt wurden und mehr als 10 000 Zuschauer hatten.
+
+***
+
+### Reihenfolge verändern mit arrange()
+
+Analog zu `filter()` können Zeilen auch einfach nur sortiert werden. Dies geht mit dem `arrange()` Befehl:
+
+```{r}
+arrange(flights, dep_delay)
+#Standard ist aufsteigend!
+
+#Stattdessen in absteigender Ordnung:
+arrange(flights, desc(dep_delay))
+#desc() steht für "descending"
+
+```
+
+Fehlende Werte landen immer am Ende!
+
+
+
+### Neue Variablen erzeugen mit mutate()
+
+Wirklich interessant wird es, wenn wir neue Variablen erzeugen. Das geht mit der `mutate()` Funktion. Die Mutate funktion nimmt den Datensatz, den wir ihr geben und erzeugt eine neue Variable zusätzlich zu den bestehenden:
+
+```{r}
+mutate(flights, neue_variable = 1) #was hat die Funktion hier automatisch gemacht?
+
+#ich kann natürlich auch Variablen basteln, die auf anderen Variablen basieren:
+mutate(flights, neue_variable = arr_time - 10) #was ist jetzt passiert?
+
+#man kann auch neue Variablen aus bestehenden basteln:
+mutate(flights, speed = air_time/distance)
+
+#ich kann mich innerhalb des selben mutate Befehls auf neu erzeugte Variablen beziehen!
+mutate(flights, kph = distance/air_time*60, mph = kph/1.62)
+
+
+#standardmäßig wird der gesamt Input Datensatz wieder mitausgegeben, wenn ich stattdessen nur die neu erzeugten Vars haben möchte kann ich transmute() verwenden:
+transmute(flights, kph = distance/air_time*60, mph = kph/1.62)
+
+```
+
+Es gibt eine Reihe an Funktionen die bei der Erzeugung neuer Variablen hilfreich sind. Hier sind einige:
+
+
+```{r}
+#die üblichen Statistiken mean/sd/min/max
+
+mutate(flights, avg_arr_delay = mean(arr_delay, na.rm=T))
+
+mutate(flights, sd_arr_delay = sd(arr_delay, na.rm=T))
+
+
+#logs
+mutate(flights, log_arr_delay = log(arr_delay))
+
+#bei Zeitreihendaten: lag() und lead()
+
+x <-  1:100
+y <- sample(x, 100, replace = T)
+
+
+lag(x)
+lead(x)
+
+#Kumulative Aggregate
+
+cumsum(x)
+cumprod(x)
+
+cummin(y)
+cummax(y)
+cummean(y)
+
+#Ränge
+min_rank(y)
+percent_rank(y)
+cume_dist(y)
+```
+
+***
+
+### Aufgaben mutate()
+
+#### Aufgabe 3.4
+
+
+
+
+***
+
+#### Anhand von Variablen gruppieren mit group_by() und Gruppen zusammenfassen mit summarize()
+
+
+Die obigen Befehle werden vor Allem nützlich wenn wir sie auf _gruppierte_ Daten anwenden. Gruppieren heißt, wir fassen alle Beobachtungen, die bei einer bestimmten Variable die selbe Ausprägung haben, zusammen und können mit den Gruppen weiterarbeiten. 
+
+```{r}
+#ich kann anhand einer Variable gruppieren
+group_by(flights, year)
+#warum scheint sich nichts geändert zu haben?
+
+#wir sehen, was eine Gruppierung macht, wenn wir den gruppierten Datensatz zwischenspeichern
+flights_by_day <- group_by(flights, year,month,day)
+
+summarize(flights_by_day, mean_arr_delay = mean(arr_delay, na.rm=T))
+
+
+#ihr könnte eine Gruppierung aufheben, indem ihr ungroup() anwendet
+summarize(ungroup(flights_by_day), mean_arr_delay = mean(arr_delay, na.rm=T))
+#was ist jetzt passiert?
+
+```
+
+Oben haben wir den gruppierten Datensatz zwischengespeichert, um dann mit ihm weiterarbeiten zu können. Wir können stattdessen die pipe `%>%` benutzen, um mehrere aufeinanderfolgende Aktionen durchführen zu können, ohne Zwischenschritte abspeichern zu müssen. Wie euch vielleicht aufgefallen ist, nehmen alle dplyr Verben als erstes Argument ein Datenobjekt und geben als Output erneut einen Datensatz aus. Das macht sie inhährent "pipable":
+
+
+```{r}
+
+#das selbe wie oben, nur in einem Schritt:
+flights %>% group_by(year, month, day) %>%
+  summarize(mean_arr_delay = mean(arr_delay, na.rm=T))
+
+#was, wenn wir uns stattdessen für Fluggesellschaften interessieren?
+flights %>% group_by(carrier) %>%
+  summarize(mean_arr_delay = mean(arr_delay, na.rm=T))
+
+#oder den Startflughafen?
+flights %>% group_by(origin) %>%
+  summarize(mean_arr_delay = mean(arr_delay, na.rm=T))
+
+#oder den Zielflughafen?
+flights %>% group_by(dest) %>%
+  summarize(mean_arr_delay = mean(arr_delay, na.rm=T))
+
+
+
+
+```
+
+### Aufgaben grouped summaries
+
+#### Aufgabe 3.6
+
+Benutzt wieder den Twitch Datensatz. Erzeugt eine neue Variable, die angibt, wie lange ein gegebener Stream (Variable `title`) bereits läuft (ihr braucht `started_at` und `pulled`).
+
+#### Aufgabe 3.7
+
+Wie viele Prozent der Streams läuft 5 Stunden oder länger? (das ist schon ziemlich next level)
+

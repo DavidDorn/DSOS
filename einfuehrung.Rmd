@@ -1,0 +1,395 @@
+---
+title: "Einfuehrung in R"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{einfuehrung}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+```
+
+
+## Vorgehensweise im Seminar
+
+Wenn ihr den Titel des Seminars betrachtet ("Data Science im Marketing: Social Media Analyse"), wird euch auffallen, dass dieser aus zwei Teilen besteht. Der erste Teil bezieht sich dabei auf eine Methodik bzw. Ansammlung an Werkzeugen und Arbeitsabläufen, während der zweite den konkreten Anwendungsfall beschreibt. Wir werden werden uns zunächst mit ersterem beschäftigen und dann lernen, wie wir diese Methoden auf den speziellen Anwendungsfall der Analyse von Social Media Daten.
+
+Ihr sollt dabei vor Allem lernen, diese Schritte sauber und nachvollziehbar zu vollziehen. Desweiteren sollt ihr lernen, euch selbständig zu informieren und Probleme eigenständig zu lösen. Ich gebe euch dabei im Rahmen der Präsenztermine einige Beispiele, verweise euch auf hilfreiche Ressourcen und stehe mit Rat und Tat zur Seite, ihr müsst aber ein gewisses Maß an Eigenmotivation mitbringen und den Willen, auch mal selber rumzuprobieren.
+
+### Was wir in der ersten Woche machen werden
+
+1. Einarbeitung in Grundlegende R-Funktionen und die RStudio IDE
+2. Arbeiten mit Rmarkdown Dokumenten
+3. Datentransformation mit dem dplyr Paket
+4. Datenvisualisierung mit dem ggplot2 Paket
+
+
+### Was wir in der zweiten (und eventuell dritten) Woche machen werden
+
+1. Twitter Daten sammeln lernen
+2. Verschiedene Auswertungsmöglichkeiten für Twitter-Daten kennenlernen
+    - deskriptive Analyse
+    - Visualisierungsmöglichkeiten: Wordclouds & Netzwerke
+    - Sentiment-Analyse
+    - Boterkennung
+3. Interessante Fragestellungen für eure Seminarbeiten erarbeiten
+
+Was wir aus Zeit- und Komplexitätsgründen vernachlässigen werden, obwohl es grundlegende Bestandteile der Data Science sind:
+
+1. Datenbanken
+2. Versionskontrolle (git)
+3. Interaktivität
+4. Hosting
+
+
+## R und RStudio
+
+Wenn ihr dieses Dokument in RStudio geöffnet habt, dann habt ihr R und RStudio bereits erfolgreich installiert. R ist dabei die eigentliche Programmiersprache, in welche alle Funktionen enthalten sind. RStudio ist eine IDE (integrated development environment) für R, welche die Arbeit mit R erheblich vereinfacht. Sehr nützlich ist das Syntax-Highlighting (Hervorhebung von Elementen mit bestimmten Funktionen) und die kontext-sensitive Autovervollständigung. Dadurch wird der R-Code übersichtlicher und man kann effizienter Arbeiten, da man sich weniger Variablennamen merken muss und weniger Fehler macht. Desweiteren sind UI-Elemente für verschiedene Funktionen außerhlab von R selbst verfügbar, für die man sonst die Commandline verwenden müsste (bspw. der Knit-Befehl den wir heute verwenden werden). Außerdem kann die Oberfläche und das Aussehen von RStudio beliebig angepasst werden und es gibt die Möglichkeit, Addins einzubinden.
+
+Ein sehr nützliches Feature von RStudio sind _Projekte_. Projekte sind getrennte Instanzen von R, welche jeweils ihr eigenes _envrionment_ haben. Das environment (Umgebung) von R umfasst alle geladenenen Pakete, Objekte und Einstellungen. Eine Schwierigkeit bei der Nutzung von R ist es, einen Überblick zu behalten was nur in der aktuellen Umgebung (RAM des Computers) ist und was bei Schließen oder Neustart tatsächlich auf dem Rechner verbleibt (in Form von Code oder gespeicherten Dateien). Projekte helfen euch dabei, übersichtlich und reproduzierbar zu arbeiten. Wenn ihr eine .Rproj Datei öffnet, öffnet sich eine Instanz von RStudio, in welcher je nach Einstellung der Status der letzten Sitzung wieder aufgegriffen wird. Außerdem wird automatisch das Arbeitsverzeichnis (Working Directory) auf den Ordner gesetzt, indem sich die .Rproj Datei befindet. Das WD ist der Ort auf deinem Rechner, in dem R "arbeitet", dies ist vor allem dann relevant, wenn es um das öffnen oder speichern von Dateien geht (dazu später mehr).
+
+## Rmarkdown
+
+RStudio bietet eine Menge an Funktionen um Rmarkdown Dokumente zu erstellen. Ein Rmarkdown Dokument umfasst Text, welcher per Markdown gestylet werden kann, Code (in R und weiteren unerstützten Sprachen) und Ergebnisse. Das Dokument, dass ihr gerade lest, ist ein solches Rmarkdown Dokument.
+
+### Markdown
+
+Markdown ist, obwohl der Name anderes vermuten lässt, eine sogenannte Mark*up*-Sprache. Markup bedeutet, dass Text nicht nur als Text wiedergegeben wird ( *plaintext*), sondern andere ästhetische (**fett**, *kursiv*)  und funktionelle (Hypertext Links, Überschriften etc.) Eigenschaften abgebildet werden können. Alle diese Funktionen sollten euch aus Textprogrammen wie Word geläufig sein. Hinter diesen steckt ebenfalls eine Markup-Sprache (XML), diese seht ihr als Nutzer jedoch nicht sondern habt eine UI und seht die Ergebnisse sofort ("what you see is what you get", WYSIWYG). In Markdown seht ihr nicht sofort die Ergebnisse, sondern schreibt den Text mit bestimmten Befehlen und seht das Endergebnis erst, nachdem der Text in HTML "übersetzt" wurde ("what you see is what you mean", WYSIWYM). Eine Übersicht über den Markdown Synstax findet ihr einerseits in der Datei "markdown_beispiel.md" und bspw. [hier](https://www.markdownguide.org/basic-syntax/).
+
+### Code: Chunks und Inline
+
+Das besondere an Rmarkdown ist, dass neben (Markdown-)Text auch ausführbarer Code enthalten sein kann. Dies kann in Form von zwei Arten verstehen, als sogenannter *chunk* oder *inline*. Das hier ist ein Code Chunk:
+
+```{r}
+#das hier ist ein Kommentar
+#so können wir Daten aus eineer Datei laden
+data("twitch_data")
+```
+
+
+Man kann auch *inline-code* verwenden, das sieht dann so aus: Der Datensatz umfasst `r dim(twitch_data)[1]` Beobachtungen.
+
+Dies erlaubt es, ein Dokument mit relativen Bezügen zu erstellen, ähnlich einer Excel-Tabelle! Wenn sich also bspw. die Datengrundlage ändert, müssen wir nicht mühsam alle Bezüge im Text anpassen. Noch fortgeschrittener lassen sich sogenannte _parameterisierte_ Reports erzeugen, bei dem man dem Befehl zur Erzeugung des Dokuments einen oder mehrere Parameter beifügt. Auf diese Weise lassen sich automatisiert Reports zu verschiedenen Themen erzeugen, bspw. Auswertungen je Land, Branche, Kunde etc.!
+
+### Fortgeschrittener: Verschiedene Outputs, LateX-Elemente
+
+Hinter Rmarkdown steckt ein Programm namens **pandoc**. Dieses macht aus dem Rmarkdown Dokument den Output den wir haben möchten und unterstützt so ziemlich alles was man sich vorstellen kann (PDFs mit verschiedensten Vorlagen, Slides). Auch LateX kann verwendet werden (bspw. für Formeln), dies ist allerdings in meiner Erfahrung immer mit sehr viel Frickelei verbunden und wir bleiben deshalb bei HTML. Wissenschaftliche verweise können durch BibLateX eingebunden werden (entweder direkt im Dokument oder per Verweis auf eine .bib Datei). Wenn ihr viele Quellen zitiert und bereits ein Literaturverwaltungsprogramm verwendet (Zotero, Mendeley), kann es sich lohnen die letztere Variante zu wählen. Für unsere Zwecke reicht es aber auch, wenn jede Quelle manuell als Fußnote eingefügt wird.
+
+***
+
+### Aufgaben Rmarkdown
+
+#### Aufgabe 1.1
+
+Öffnet das Beispiel Rmarkdown Dokument "rmd_beispiel.Rmd" in RStudio. Klickt auf "knit" und beobachtet was passiert.
+
+#### Aufgabe 1.2
+
+Ändert nun im Header des Dokuments unter "params" den Parameter `game_title` von "Fortnite" zu "League of Legends" und klickt erneut auf "knit". Was hat sich verändert?
+
+#### Aufgabe 1.3
+
+Verändert im Header des Dokuments des Parameter hinter "output" zu `word_document`. Was passiert?
+
+#### Aufgabe 1.4
+
+Erstellt ein eigenes Rmarkdown Dokument (HTML) mit Hilfe des Dialogs in RStudio.
+
+***
+
+## Kurze Einführung in R
+
+R ist eine speziell für statistische Anwendungen entwickelte Programmiersprache. Ursprünglich anfang der 90er Jahre an der University of Auckland entstanden, ist sie mittlerweile vor Allem unter Wissenschaftlern etabliert, erfreut sich aber in letzten Jahren auch zunehmend steigendem Interesse aus der Wirtschaft, was vor Allem dem aktuellen Hype um Data Science zuzuschreiben ist. Das "Ökosystem" um R ist sehr robust, es gibt für fast alle erdenkbare Anwendungsfälle Pakete und da der Fokus auf der interaktiven Anwendung liegt ist der Einstieg insbesondere für Nutzer ohne Programmiererfahrung um einiges leichter als dies bspw.bei Python der Fall ist.
+
+
+### Grundlegende Rechenoperationen
+
+
+In R kann ich alle standard Rechenoperationen durchführen, in dem ich die Befehle entweder direkt in die Konsole eingebe und Enter drücke, oder die Befehle im Editor markiere und STRG(Mac CMD oder ctrl)+Enter drücke: 
+
+```{r, echo = TRUE}
+# Dies ist ein Kommentar. Kommentare werden nicht ausgeführt.
+
+2+2
+
+2-2
+
+2*2
+
+1/2
+
+2^2
+
+
+
+```
+
+Desweiteren gibt es sogenannte _logische Operatoren_, deren Ergebnis immer entweder wahr(TRUE) oder falsch(FALSE) ist. Ich kann dabei jede logische Prüfung umkehren, indem ich ein "!" davorschreibe:
+
+```{r}
+2 > 1
+2 < 1
+
+2 == 1
+2 >= 1
+2 <= 1
+
+#Prüfung umkehren mit "!":
+!2>1
+!!2>1
+#kann schnell verwirrend werden...
+
+#besonderer Operator: %in%
+2 %in% c(1,2,3,4,5)
+
+
+```
+
+
+
+
+### Zuweisung zu Objekten
+
+R ist eine objekt-orientierte Programmiersprache, das heißt ich kann *Variablen* definieren, denen ich *Werte* zuweise. Die Zuweisung erfolgt durch den sogenannten `assignment operator`, von denen R gleich zwei hat: `=` und `<-`. Beide sind in ihrer Funktion identisch, doch wird Allgemeinen empfohlen letzteren zu verwenden, da das `=` symbol doppeldeutig ist (die logische Prüfung, ob zwei Objekte identisch sind, erfolgt in R durch den logischen operator `==`, dazu später mehr). Habe ich einer Variable einen Wert zugewiesen, verbleibt diese in meinem _environment_. und ich kann mit der Variable in gleicher Art weiterarbeiten, wie ich es mit dem zugewiesenen Wert tun würde.
+
+```{r, echo = TRUE}
+
+x <- 2
+y <-  1
+z = x+x+1
+#wie ihr seht, erfolgt die Zuordnung still, erst wenn ich die Variable aufrufe sehe ich das "Ergebnis"
+x+x
+z
+
+```
+
+Zugewiesene Werte müssen nicht nur ganze Zahlen ( _integers_ ) sein, sondern können auch gebrochene Zahlen ( _floats_ ), Buchstaben(folgen) ( _strings_ ) und sogenannte _Booleans_ (TRUE / FALSE) sein. Darüberhinaus sind nicht nur einzelne Werte, sondern natürlich auch komplexere Gebilde aus Werten, wie Vektoren, Matrizen, Listen und Dataframes (und Listen, Listen von Listen, Dataframes voller Listen voller Matrizen...), möglich.
+
+
+
+```{r, echo = TRUE}
+#ein einzelner String
+string <- "Dies ist ein String"
+
+#ein Vektor aus Strings. c() ist eine Funktion, das c steht für combine (später mehr)
+mehrere_strings <- c("Dies ist auch ein String", ", ", "er ist schön", ", ", "oder?")
+mehrere_strings
+
+#eine Matrix
+eine_matrix <- matrix(c(1,2,3,4,5,6,7,8,9), nrow=3,ncol=3)
+#mit denen kann man auch rechnen
+eine_matrix*eine_matrix
+
+#eine Liste
+liste <- list(Vorname = "Peter", Nachname = "Schmidt", Alter = 46, Kunde = TRUE, gekaufte_produkte = c("Zahnbürste", "Deodorant", "Toilettenpapier"))
+
+#eine besondere Objektstruktur ist der für R charakteristische Dataframe
+df <- as.data.frame(eine_matrix)
+#sehr viele Funktionen in R basierend auf Dataframes bzw. auf Dataframes aufbauende Objekt-Klassen
+
+
+```
+
+### Indexierung und Namen
+
+Wenn ich ein komplexeres Gebilde - wie bspw. einen Dataframe - habe, aber mich nur für einen bestimmten Wert interessiere, kann ich auch Elemente aus diesem Dataframe direkt ansprechen. Dies kann ich einerseits über die sogenannte Array-Indexierung tun, indem ich nach meinem Objekt eckige Klammern setze und die Dimensionen (in der Regel Zeilen und Spalten, aber auch mehr möglich) angebe, die ich haben möchte:
+
+```{r}
+#erste Zeile
+df[1,]
+
+#erste Spalte
+df[,1]
+
+#Zelle Zeile 2, Spalte 3
+df[2,3]
+
+#Zeilen 1 bis 2 der zweiten Spalte
+df[1:2,2]
+
+#ich kann auch Zellen und Bereiche ausnehmen
+df[-2,-1]
+
+#oder Teile nach logischer Prüfung auswählen
+df[df[,1]>2,]
+df[!df[,1]>2,]
+#wird schnell verwirrend! 
+
+```
+
+Zeilen und Spalten können auch *Namen* haben. Das ist sehr hilfreich, da es in der Regel einfacher ist mit Worten zu hantieren, als sich zu merken in welcher Spalte welche Daten stehen. Wenn ich benannte Spalten habe, kann ich diese ansprechen indem ich nach meinem Objekt $"Spaltenname" schreibe. RStudio hilft euch, indem es ein Drop-Down Menü öffnet mit den Spaltennamen des Objekts! Ihr könnt auch darin suchen indem ihr lostippt.
+
+```{r}
+
+names(df)
+names(liste)
+
+
+liste$Vorname
+liste$gekaufte_produkte[2]
+
+
+```
+
+
+### Funktionen
+
+Wirklich interessant wird es, sobald man Funktionen verwendet. Ihr habt oben schon vier gesehen: `c()` (erstellt einen Vektor aus Elementen), `matrix()` (erstellt eine Matrix), `list()` (erzeugt ein Listenobjekt) und `as.data.frame()` (macht aus Objekten anderen Typs einen Dataframe). Funktionen bestehen jeweils aus einem Funktionsnahmen gefolgt von runden Klammern. In diesen Klammern stehen sogenannte _Argumente_, bei mehreren jeweils per Komma getrennt. Wenn ihr RStudio benutzt und mit der Maus über der funktion schweben bleibt, seht ihr eine Übersicht der Argumente der Funktion. Ihr könnt auch vor eine Funktion "?" schreiben und erhaltet eine Erläuterung der Funktion mit Beispielen ( _Dokumentation_ ).
+
+```{r}
+
+paste(mehrere_strings, collapse = "")
+
+#wenn ihr genauer wissen wollt, was eine Funktion tut, schaut in die Dokumentation
+?paste()
+```
+
+Ich kann die Ergebnisse von Funktionen natürlich auch Objekten zuweisen:
+
+```{r}
+#100 Werte einer Normalverteilung mit Mittelwert 100 und Standardabweichung 40 erzeugen
+e <- rnorm(100, mean = 100, sd = 40)
+#100 Werte einer Normalverteilung mit Mittelwert 90 und Standardabweichung 30 erzeugen
+x <- rnorm(100, mean = 90, sd = 30)
+# eine neue Variable (in diesem Fall Vektor) aus anderen Variablen erzeugen
+y <- 2.4*x+e
+
+```
+
+Und diese dann wiederum in anderen Funktionen verwenden. Hier als Beispiel eine einfache lineare Regression mit den oben simulierten Daten:
+
+```{r}
+#Modell berechnen
+regression <- lm(y~x)
+
+#Lineare Regression funktioniert!
+summary(regression)
+?summary()
+
+#scatterplot+regressionsgrade
+plot(x,y)
+abline(regression)
+
+```
+
+Was ihr innerhalb der `lm()` (steht für _linear model_) Funktion seht, ist der spezielle Formel-Syntax von R. Die Tilde bedeutet dabei "wird regressiert auf", y ist in diesem Fall also unsere abhängige Variable, deren Wert durch x erklärt werden soll. Da der Fokus des Seminars nicht auf der Berechnung statistischer Modelle liegt (es sei denn, ihr wollt welche verwenden), werden wir vermutlich kaum mit Formeln in Berührung kommen. Für den Fall wisst ihr aber, wie sie funktionieren. Der `summary()` Befehl wird euch häufiger über den Weg laufen. Er tut unterschiedliche Dinge, je nachdem welchen _Typ_ der input hat. Im obigen Fall viel wird das objekt `regression` als geschätztes Modell erkannt und man erhält eine passende Auswertung. Wenn wir stattdessen einen Dataframe als argument geben erhalten wir deskriptive Statistiken für alle darin enthaltenen Variablen:
+
+```{r}
+#summary Funktion auf einen Dataframe angewandt
+summary(twitch_data)
+```
+
+Die `summary()` Funktion macht in diesem Fall nicht anderes, als gängige zusammenfassende Statistiken zu berechnen. Das kann man natürlich auch manuell machen:
+
+
+```{r}
+#beachtet das na.rm Argument! Dieses sagt, dass fehlende Werte nicht berücksichtigt werden sollen!
+mean(twitch_data$view_count, na.rm = TRUE)#arithmetisches Mittel
+min(twitch_data$view_count, na.rm = TRUE)#Minimum (kleinster Wert in der Auswahl)
+max(twitch_data$view_count, na.rm = TRUE)#Maximum (größter Wert in der Auswahl)
+sd(twitch_data$view_count, na.rm = TRUE)#Standardabweichung
+
+```
+
+Funktionen können auch Argumente in anderen Funktionen sein! Das heißt, ich muss nicht alle Ergebnisse zwischenspeichern, sondern kann ineinander _genestete_ Funktionen verwenden:
+
+
+```{r}
+#Histogramm zufällig erzeugter normalverteilter Werte
+hist(rnorm(1000,0,1))
+
+
+```
+
+
+Ich kann natürlich auch selber Funktionen schreiben, um sich wiederholende Arbeitsschritte zusammenzufassen. Das sieht dann so aus:
+
+```{r}
+
+describe_stats <- function(data) {
+ 
+  stats <- list(
+   mean = mean(data, na.rm = TRUE),
+   min = min(data, na.rm = TRUE),
+   max = max(data, na.rm = TRUE),
+   sd = sd(data, na.rm = TRUE)
+)
+print(
+  paste("Das arithmetische Mittel beträgt ", stats$mean, 
+        ", die Standardabweichung", stats$sd, 
+        "mit einem Minimum von ", stats$min, 
+        " und einem Maximum von ", stats$max))  
+}
+describe_stats(twitch_data$viewer_count)
+
+```
+
+Falls das für euch wie Voodoo aussieht braucht ihr euch keine Sorgen machen. Der Fokus der Veranstaltung liegt nicht auf der Programmierung von Funktionen, sondern vor Allem in der Anwendung bereits bestehender. In den Fällen, in denen eigene Funktionen sinnvoll oder notwendig sind gebe ich euch passende.^[Was euch natürlich nicht davon abhalten soll, es selber zu versuchen!]
+
+### Pakete
+
+Pakete sind Sammlungen von Funktionen. R enthält Standardmäßig schon eine Menge an Paketen, weitere können installiert werden. R hat eine eingebaute Paketmanagement funktion, sodass ihr Pakete einfach aus R heraus installieren könnt. Sollte sich das Paket, dass ihr installieren wollt, wiederum auf andere Pakete beziehen, werden diese automatisch mitinstalliert. Alternativ könnt ihr auch in RStudio über den Reiter "Tools>Install Packages" Pakete installieren.Das offizielle Paketrepositorium ist CRAN (Comprehensive R Archive Network), man kann aber auch Pakete über andere Dienste, wie bspw. Github installieren. Hierzu benötigt man das Paket `Devtools`. Wurde ein Paket installiert, lässt es sich über den `library()` Befehl laden:
+
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+
+```
+
+
+
+### Dateien öffnen und speichern
+
+In der Regel möchte man nicht nur mit in R erzeugten Daten arbeiten, sondern arbeitet mit einem bereits in anderer Form existierenden Datensätzen. Diese können verschiedenste Dateiformate haben und für eigentlich jedes erdenkliche Dateiformat existieren R-Funktionen, mit denen es möglich ist sie in R zu laden. Einige sind standardmäßig in R enthalten, wie bspw. für sogenannte `separated value` Dateien. Das sind Textdateien, in denen jeder Wert durch einen bestimmten `delimiter` (Komma, Semikolon oder Tab) getrennt ist. Dieses Dateiformat ist sehr weit verbreitet und für "flache" Daten (zweidimensionale Tabellen) auch recht gut geeignet. Eine Quelle von Problemen sind die lokal unterschiedliche Verwendung von Zeichen. In Deutschland ist es u.A. üblich, Kommata als Dezimaltrennzeichen zu verwenden, während im englischsprachigen Ausland hierfür Punkte verwendet werden. Dies kann zu Konflikten führen, wenn Kommata als Trennzeichen verwendet werden. Ihr müsst deshalb immer wissen, wie die Daten formatiert wurden und die Argumente der Einlesefunktionen richtig setzen:
+
+```{r}
+?read.csv()
+?write.csv()
+
+
+```
+
+Das Dateiformat, mit dem ihr persönlich vermutlich am häufigsten gearbeitet habt, sind Excel-Workbooks (`.xlsx`). Falls euch Daten in dieser Form geliefert werden und ihr möchtet in R mit Ihnen arbeiten, habt ihr zwei Möglichkeiten. Entweder, ihr exportiert die Daten aus Excel im SV Format oder ihr benutzt ein externes Paket um mit Excel-Workbpoks zu interagieren, wie bspw. das `readxl` Paket. Wir konzentrieren uns im Rahmen des Seminars auf CSV Dateien.
+
+
+### Basis R vs. Tidyverse
+
+Was wir im weiteren Verlauf dieses Seminars lernen verwendet in weiten Teilen nicht basis R, sondern das sogenannte "tidyverse". Das tidyverse bezeichnet eine Sammlung von Paketen, welche auf den Prinzipien der _tidy data_ aufbauen (was genau das ist wird später erläutert). Hauptentwickler des tidyverse's ist Hadley Wickham (University of Auckland, RStudio), andere Namen die euch bei Recherchen häufig auffallen werden sind...
+Es gibt unter alteingesessenen Nutzern rege Diskussion darüber, was denn "besser" sei, an sich sind es aber einfach andere Ansätze und Philosophien. Ich persönlich komme mit tidy-Ansätzen sehr viel besser klar und bin produktiver.Gerade wenn es um Bereinigung und Transformierung von Daten geht (munging/wrangling), sind Pakete wie dplyr, purrr, readr und lubridate sehr mächtig und mMn für Einsteiger viel intuitiver. Tidy code ist, sobald man einmal verstanden hat wie eine Pipe (in R das etwas unhandliche Symbol`%>%`) funktioniert, sehr viel übersichtlicher als basis R code und einfacher nachzuvollziehen, da mit dplyr-verben und Spaltennamen gearbeitet wird, anstatt mit Array-Indexing.
+
+Anbei ein kleines Beispiel, was den Unterschied veranschaulichen soll:
+
+```{r eval=TRUE, message=FALSE, warning=FALSE, include=TRUE}
+#Aufgabe: "Gib mir die 10 Streamer des Spiels "Dota 2" mit den höchsten Zuschauerzahlen"
+
+#mit basis R
+twitch_data[grepl("Dota 2", twitch_data$game_title),][1:10,c(12, 6)]
+
+#tidy
+twitch_data %>% 
+  filter(game_title == "Dota 2") %>% 
+  select(login, viewer_count) %>%
+  head(10)
+
+```
+
+Wie ihr seht kommen beide Varianten zum selben Ergebnis, die tidy-variante ist aber wesentlich übersichtlicher. Es gibt wahrscheinlich noch bessere Möglichkeiten mit Basis R zum selben Ergebnis zu kommmen, aber diese ist die, die mir eingefallen ist. 
+
+***
+
+### Aufgaben R
+
+#### Aufgabe 2.1
+
+Erzeugt einen Vektor von Zahlen, welche von 0.1 bis 100 geht, in 0.1er Schritten. Benutzt die Funktion `seq()`.
+
+#### Aufgabe 2.2
+
+Erstellt einen Vektor aus Zahlen, in denen die Sequenz von 1 bis 10 insgesamt 100 mal wiederholt wird. Benutzt dazu die `rep()` und die `seq()` Funktion.
+
+#### Aufgabe 2.3
+
+Kombiniert die beiden Vektoren zu einem Dataframe und speichert ihn als Komma-separierte Datei ab. Löscht alle Variablen in eurem Environment und ladet die Datei wieder ein. Was fällt euch auf?
