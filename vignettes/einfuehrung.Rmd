@@ -1,8 +1,8 @@
 ---
-title: "Einfuehrung in R"
+title: "Einführung in R"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{einfuehrung}
+  %\VignetteIndexEntry{Einführung in R}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
