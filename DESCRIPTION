@@ -1,17 +1,22 @@
 Package: DSOS
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Kursmaterialien für die Seminarreihe "Datascience für Wirtschaftswissenschaftler" an der Universität Osnabrück
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: David Dornekott
+Maintainer: David Dornekott <dadornekott@uos.de>
+Description: Enthält Arbeitsblätter (in Form von Vignetten), Beispieldaten und Hilfsfunktionen 
+    für verschiedene Fragestellungen aus dem Bereich der Social Media Analyse. 
+License: MIT
 Encoding: UTF-8
 LazyData: true
 Suggests: 
     knitr,
     rmarkdown
+Imports:
+    tidyverse,
+    lubridate,
+    rtweet,
+    sentimentr
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)

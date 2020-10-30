@@ -2,7 +2,7 @@
 title: "Visualisierung mit ggplot2"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{visualisierung}
+  %\VignetteIndexEntry{Visualisierung mit ggplot2}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -194,7 +194,7 @@ standard_plot+
 
 Es existieren mittlerweile eine Reihe weiterer Pakete, welche ggplot2 um Zusatzfunktionen erweitern. Eines meiner persönlichen Favoriten ist `gganimate`, welches es erlaubt animierte Plots zu erstellen. 
 
-```{r}
+```{r, eval=FALSE}
 library(gganimate)
 library(DSOSdata)
 data(twitch_data)

@@ -1,1 +1,5 @@
 exportPattern("^[[:alpha:]]+")
+import(tidyverse)
+import(lubridate)
+import(rtweet)
+import(sentimentr)

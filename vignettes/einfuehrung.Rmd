@@ -49,7 +49,7 @@ Was wir aus Zeit- und Komplexitätsgründen vernachlässigen werden, obwohl es g
 
 Wenn ihr dieses Dokument in RStudio geöffnet habt, dann habt ihr R und RStudio bereits erfolgreich installiert. R ist dabei die eigentliche Programmiersprache, in welche alle Funktionen enthalten sind. RStudio ist eine IDE (integrated development environment) für R, welche die Arbeit mit R erheblich vereinfacht. Sehr nützlich ist das Syntax-Highlighting (Hervorhebung von Elementen mit bestimmten Funktionen) und die kontext-sensitive Autovervollständigung. Dadurch wird der R-Code übersichtlicher und man kann effizienter Arbeiten, da man sich weniger Variablennamen merken muss und weniger Fehler macht. Desweiteren sind UI-Elemente für verschiedene Funktionen außerhlab von R selbst verfügbar, für die man sonst die Commandline verwenden müsste (bspw. der Knit-Befehl den wir heute verwenden werden). Außerdem kann die Oberfläche und das Aussehen von RStudio beliebig angepasst werden und es gibt die Möglichkeit, Addins einzubinden.
 
-Ein sehr nützliches Feature von RStudio sind _Projekte_. Projekte sind getrennte Instanzen von R, welche jeweils ihr eigenes _envrionment_ haben. Das environment (Umgebung) von R umfasst alle geladenenen Pakete, Objekte und Einstellungen. Eine Schwierigkeit bei der Nutzung von R ist es, einen Überblick zu behalten was nur in der aktuellen Umgebung (RAM des Computers) ist und was bei Schließen oder Neustart tatsächlich auf dem Rechner verbleibt (in Form von Code oder gespeicherten Dateien). Projekte helfen euch dabei, übersichtlich und reproduzierbar zu arbeiten. Wenn ihr eine .Rproj Datei öffnet, öffnet sich eine Instanz von RStudio, in welcher je nach Einstellung der Status der letzten Sitzung wieder aufgegriffen wird. Außerdem wird automatisch das Arbeitsverzeichnis (Working Directory) auf den Ordner gesetzt, indem sich die .Rproj Datei befindet. Das WD ist der Ort auf deinem Rechner, in dem R "arbeitet", dies ist vor allem dann relevant, wenn es um das öffnen oder speichern von Dateien geht (dazu später mehr).
+Ein sehr nützliches Feature von RStudio sind _Projekte_. Projekte sind getrennte Instanzen von R, welche jeweils ihr eigenes _environment_ haben. Das environment (Umgebung) von R umfasst alle geladenenen Pakete, Objekte und Einstellungen. Eine Schwierigkeit bei der Nutzung von R ist es, einen Überblick zu behalten was nur in der aktuellen Umgebung (RAM des Computers) ist und was bei Schließen oder Neustart tatsächlich auf dem Rechner verbleibt (in Form von Code oder gespeicherten Dateien). Projekte helfen euch dabei, übersichtlich und reproduzierbar zu arbeiten. Wenn ihr eine .Rproj Datei öffnet, öffnet sich eine Instanz von RStudio, in welcher je nach Einstellung der Status der letzten Sitzung wieder aufgegriffen wird. Außerdem wird automatisch das Arbeitsverzeichnis (Working Directory) auf den Ordner gesetzt, indem sich die .Rproj Datei befindet. Das WD ist der Ort auf deinem Rechner, in dem R "arbeitet", dies ist vor allem dann relevant, wenn es um das öffnen oder speichern von Dateien geht (dazu später mehr).
 
 ## Rmarkdown
 
@@ -334,8 +334,8 @@ Falls das für euch wie Voodoo aussieht braucht ihr euch keine Sorgen machen. De
 
 Pakete sind Sammlungen von Funktionen. R enthält Standardmäßig schon eine Menge an Paketen, weitere können installiert werden. R hat eine eingebaute Paketmanagement funktion, sodass ihr Pakete einfach aus R heraus installieren könnt. Sollte sich das Paket, dass ihr installieren wollt, wiederum auf andere Pakete beziehen, werden diese automatisch mitinstalliert. Alternativ könnt ihr auch in RStudio über den Reiter "Tools>Install Packages" Pakete installieren.Das offizielle Paketrepositorium ist CRAN (Comprehensive R Archive Network), man kann aber auch Pakete über andere Dienste, wie bspw. Github installieren. Hierzu benötigt man das Paket `Devtools`. Wurde ein Paket installiert, lässt es sich über den `library()` Befehl laden:
 
-```{r}
-#install.packages("tidyverse")
+```{r, eval=FALSE}
+install.packages("tidyverse")
 library(tidyverse)
 
 ```
@@ -346,7 +346,7 @@ library(tidyverse)
 
 In der Regel möchte man nicht nur mit in R erzeugten Daten arbeiten, sondern arbeitet mit einem bereits in anderer Form existierenden Datensätzen. Diese können verschiedenste Dateiformate haben und für eigentlich jedes erdenkliche Dateiformat existieren R-Funktionen, mit denen es möglich ist sie in R zu laden. Einige sind standardmäßig in R enthalten, wie bspw. für sogenannte `separated value` Dateien. Das sind Textdateien, in denen jeder Wert durch einen bestimmten `delimiter` (Komma, Semikolon oder Tab) getrennt ist. Dieses Dateiformat ist sehr weit verbreitet und für "flache" Daten (zweidimensionale Tabellen) auch recht gut geeignet. Eine Quelle von Problemen sind die lokal unterschiedliche Verwendung von Zeichen. In Deutschland ist es u.A. üblich, Kommata als Dezimaltrennzeichen zu verwenden, während im englischsprachigen Ausland hierfür Punkte verwendet werden. Dies kann zu Konflikten führen, wenn Kommata als Trennzeichen verwendet werden. Ihr müsst deshalb immer wissen, wie die Daten formatiert wurden und die Argumente der Einlesefunktionen richtig setzen:
 
-```{r}
+```{r, eval = FALSE}
 ?read.csv()
 ?write.csv()
 
