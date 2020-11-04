@@ -286,7 +286,7 @@ regression <- lm(y~x)
 
 #Lineare Regression funktioniert!
 summary(regression)
-?summary()
+
 
 #scatterplot+regressionsgrade
 plot(x,y)
@@ -294,7 +294,26 @@ abline(regression)
 
 ```
 
-Was ihr innerhalb der `lm()` (steht für _linear model_) Funktion seht, ist der spezielle Formel-Syntax von R. Die Tilde bedeutet dabei "wird regressiert auf", y ist in diesem Fall also unsere abhängige Variable, deren Wert durch x erklärt werden soll. Da der Fokus des Seminars nicht auf der Berechnung statistischer Modelle liegt (es sei denn, ihr wollt welche verwenden), werden wir vermutlich kaum mit Formeln in Berührung kommen. Für den Fall wisst ihr aber, wie sie funktionieren. Der `summary()` Befehl wird euch häufiger über den Weg laufen. Er tut unterschiedliche Dinge, je nachdem welchen _Typ_ der input hat. Im obigen Fall viel wird das objekt `regression` als geschätztes Modell erkannt und man erhält eine passende Auswertung. Wenn wir stattdessen einen Dataframe als argument geben erhalten wir deskriptive Statistiken für alle darin enthaltenen Variablen:
+Was ihr innerhalb der `lm()` (steht für _linear model_) Funktion seht, ist der spezielle Formel-Syntax von R. Die Tilde bedeutet dabei "wird regressiert auf", y ist in diesem Fall also unsere abhängige Variable, deren Wert durch x erklärt werden soll. Der Fokus des Seminars liegt nicht auf der Berechnung statistischer Modelle, ihr könnt aber natürlich in eurer Arbeit auch gerne welche verwenden. Wir können zum Beispiel in unserem Datensatz überprüfen, welchen Einfluss die Anzahl der Follower des Accounts auf die Anzahl der Shares der einzelnen Posts hat:
+
+```{r}
+model <- lm(stats_shareCount~authorStats_followerCount,data = tiktok_celebs)
+summary(model)
+
+#was kännte ein Problem bei der Modellspezifikation sein?
+
+#Hinweis:
+#hist(tiktok_celebs$stats_shareCount)
+#hist(log(tiktok_celebs$stats_shareCount))
+#hist(tiktok_celebs$authorStats_followerCount)
+#hist(model$residuals)
+
+
+```
+
+
+
+Der `summary()` Befehl, den wir jetzt schon mehrfach verwendet haben, wird euch häufiger über den Weg laufen. Er tut unterschiedliche Dinge, je nachdem welchen _Typ_ der input hat. Im obigen Fall viel wird das objekt `regression` als geschätztes Modell erkannt und man erhält eine passende Auswertung. Wenn wir stattdessen einen Dataframe als argument geben erhalten wir deskriptive Statistiken für alle darin enthaltenen Variablen:
 
 ```{r}
 #summary Funktion auf einen Dataframe angewandt
@@ -346,7 +365,7 @@ describe_stats(tiktok_celebs$stats_shareCount)
 
 ```
 
-Falls das für euch wie Voodoo aussieht braucht ihr euch keine Sorgen machen. Der Fokus der Veranstaltung liegt nicht auf der Programmierung von Funktionen, sondern vor Allem in der Anwendung bereits bestehender. In den Fällen, in denen eigene Funktionen sinnvoll oder notwendig sind gebe ich euch passende.^[Was euch natürlich nicht davon abhalten soll, es selber zu versuchen!]
+Falls das für euch erstmal wie Voodoo aussieht braucht ihr euch keine Sorgen machen, wir befassen uns später nochmal etwas tiefer mit Funktionen. Der Fokus der Veranstaltung liegt auch nicht auf der Programmierung von Funktionen, sondern vor Allem in der Anwendung bereits bestehender. In den Fällen, in denen eigene Funktionen sinnvoll oder notwendig sind gebe ich euch passende.^[Was euch natürlich nicht davon abhalten soll, es selber zu versuchen!]
 
 ### Pakete
 
@@ -362,9 +381,10 @@ library(tidyverse)
 
 ### Dateien öffnen und speichern
 
-In der Regel möchte man nicht nur mit in R erzeugten Daten arbeiten, sondern arbeitet mit einem bereits in anderer Form existierenden Datensätzen. Diese können verschiedenste Dateiformate haben und für eigentlich jedes erdenkliche Dateiformat existieren R-Funktionen, mit denen es möglich ist sie in R zu laden. Einige sind standardmäßig in R enthalten, wie bspw. für sogenannte `separated value` Dateien. Das sind Textdateien, in denen jeder Wert durch einen bestimmten `delimiter` (Komma, Semikolon oder Tab) getrennt ist. Dieses Dateiformat ist sehr weit verbreitet und für "flache" Daten (zweidimensionale Tabellen) auch recht gut geeignet. Eine Quelle von Problemen sind die lokal unterschiedliche Verwendung von Zeichen. In Deutschland ist es u.A. üblich, Kommata als Dezimaltrennzeichen zu verwenden, während im englischsprachigen Ausland hierfür Punkte verwendet werden. Dies kann zu Konflikten führen, wenn Kommata als Trennzeichen verwendet werden. Ihr müsst deshalb immer wissen, wie die Daten formatiert wurden und die Argumente der Einlesefunktionen richtig setzen:
+In der Regel möchte man nicht nur mit in R erzeugten Daten arbeiten, sondern arbeitet mit bereits in anderer Form existierenden Datensätzen. Diese können verschiedenste Dateiformate haben und für eigentlich jedes erdenkliche Dateiformat existieren R-Funktionen, mit denen es möglich ist sie in R zu laden. Einige sind standardmäßig in R enthalten, wie bspw. für sogenannte `separated value` Dateien. Das sind Textdateien, in denen jeder Wert durch einen bestimmten `delimiter` (Komma, Semikolon oder Tab) getrennt ist. Dieses Dateiformat ist sehr weit verbreitet und für "flache" Daten (zweidimensionale Tabellen) auch recht gut geeignet. Eine Quelle von Problemen sind die lokal unterschiedliche Verwendung von Zeichen. In Deutschland ist es u.A. üblich, Kommata als Dezimaltrennzeichen zu verwenden, während im englischsprachigen Ausland hierfür Punkte verwendet werden. Dies kann zu Konflikten führen, wenn Kommata als Trennzeichen verwendet werden. Ihr müsst deshalb immer wissen, wie die Daten formatiert wurden und die Argumente der Einlesefunktionen richtig setzen:
 
 ```{r, eval = FALSE}
+#schreibt ein "?" vor die Funktion um die Dokumentation zu lesen
 ?read_csv()
 ?write_csv()
 
