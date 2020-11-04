@@ -34,7 +34,6 @@ Ihr sollt dabei vor Allem lernen, diese Schritte sauber und nachvollziehbar zu v
     - deskriptive Analyse
     - Visualisierungsmöglichkeiten: Wordclouds & Netzwerke
     - Sentiment-Analyse
-    - Boterkennung
 3. Interessante Fragestellungen für eure Seminarbeiten erarbeiten
 
 Was wir aus Zeit- und Komplexitätsgründen vernachlässigen werden, obwohl es grundlegende Bestandteile der Data Science sind:
@@ -47,9 +46,28 @@ Was wir aus Zeit- und Komplexitätsgründen vernachlässigen werden, obwohl es g
 
 ## R und RStudio
 
-Wenn ihr dieses Dokument in RStudio geöffnet habt, dann habt ihr R und RStudio bereits erfolgreich installiert. R ist dabei die eigentliche Programmiersprache, in welche alle Funktionen enthalten sind. RStudio ist eine IDE (integrated development environment) für R, welche die Arbeit mit R erheblich vereinfacht. Sehr nützlich ist das Syntax-Highlighting (Hervorhebung von Elementen mit bestimmten Funktionen) und die kontext-sensitive Autovervollständigung. Dadurch wird der R-Code übersichtlicher und man kann effizienter Arbeiten, da man sich weniger Variablennamen merken muss und weniger Fehler macht. Desweiteren sind UI-Elemente für verschiedene Funktionen außerhlab von R selbst verfügbar, für die man sonst die Commandline verwenden müsste (bspw. der Knit-Befehl den wir heute verwenden werden). Außerdem kann die Oberfläche und das Aussehen von RStudio beliebig angepasst werden und es gibt die Möglichkeit, Addins einzubinden.
+Wenn ihr dieses Dokument in RStudio geöffnet habt, dann habt ihr R und RStudio bereits erfolgreich installiert. R ist dabei die eigentliche Programmiersprache, welche die eigentliche Funktionalität enthält. RStudio ist eine IDE (integrated development environment) für R, welche die Arbeit mit R erheblich vereinfacht. Sehr nützlich ist das Syntax-Highlighting (Hervorhebung von Elementen mit bestimmten Funktionen) und die kontext-sensitive Autovervollständigung. Dadurch wird der R-Code übersichtlicher und man kann effizienter Arbeiten, da man sich weniger Variablennamen merken muss und weniger Fehler macht. Desweiteren sind UI-Elemente für verschiedene Funktionen außerhlab von R selbst verfügbar, für die man sonst die Commandline verwenden müsste (bspw. der Knit-Befehl den wir heute verwenden werden). Außerdem kann die Oberfläche und das Aussehen von RStudio beliebig angepasst werden und es gibt die Möglichkeit, Addins einzubinden.
 
-Ein sehr nützliches Feature von RStudio sind _Projekte_. Projekte sind getrennte Instanzen von R, welche jeweils ihr eigenes _environment_ haben. Das environment (Umgebung) von R umfasst alle geladenenen Pakete, Objekte und Einstellungen. Eine Schwierigkeit bei der Nutzung von R ist es, einen Überblick zu behalten was nur in der aktuellen Umgebung (RAM des Computers) ist und was bei Schließen oder Neustart tatsächlich auf dem Rechner verbleibt (in Form von Code oder gespeicherten Dateien). Projekte helfen euch dabei, übersichtlich und reproduzierbar zu arbeiten. Wenn ihr eine .Rproj Datei öffnet, öffnet sich eine Instanz von RStudio, in welcher je nach Einstellung der Status der letzten Sitzung wieder aufgegriffen wird. Außerdem wird automatisch das Arbeitsverzeichnis (Working Directory) auf den Ordner gesetzt, indem sich die .Rproj Datei befindet. Das WD ist der Ort auf deinem Rechner, in dem R "arbeitet", dies ist vor allem dann relevant, wenn es um das öffnen oder speichern von Dateien geht (dazu später mehr).
+Ein sehr nützliches Feature von RStudio sind _Projekte_. Projekte sind getrennte Instanzen von R, welche jeweils ihr eigenes _environment_ haben. Das environment (Umgebung) von R umfasst alle geladenenen Pakete, Objekte und Einstellungen. Eine Schwierigkeit bei der Nutzung von R ist es, einen Überblick zu behalten was nur in der aktuellen Umgebung (RAM des Computers) ist und was bei Schließen oder Neustart tatsächlich auf dem Rechner verbleibt (in Form von Code oder gespeicherten Dateien). Projekte helfen euch dabei, übersichtlich und reproduzierbar zu arbeiten. Wenn ihr eine .Rproj Datei öffnet, öffnet sich eine Instanz von RStudio, in welcher je nach Einstellung der Status der letzten Sitzung wieder aufgegriffen wird. Außerdem wird automatisch das Arbeitsverzeichnis (Working Directory) auf den Ordner gesetzt, indem sich die .Rproj Datei befindet. Das WD ist der Ort auf deinem Rechner, in dem R "arbeitet", dies ist vor allem dann relevant, wenn es um das öffnen oder speichern von Dateien geht.
+
+R agiert immer innerhalb seines _working directory_, welcher ein Ordner auf eurem Rechner ist. Das Standard WD ist bei Windows unter XX angesiedelt, bei MacOS unter xx. Ihr könnt euch euer aktuelles WD mit dem `getwd()` Befehl anzeigen lassen.
+
+Wenn ihr in R Arbeitet, werdet ihr haeufig Dateien einlesen und abspeichern. Das könnt ihr auf verschiedene Art und Weise machen, am Besten macht ihr das aber mit Hilfe des Dateipfades. Hierbei ist es wichtig, dass ihr in euren Scripten oder Rmarkdown notebooks keine **absoluten** Pfade verwendet, sondern **relative**. Dabei steht ein Punkt `.` immer für das aktuelle Verzeichnis. Wenn ihr beispielsweise in eurem Projektordner einen Unterordner **"daten"** habt und in diesem eine Datei **"tweets.csv"**, erreicht ihr diese Datei über den Pfad **"./daten/tweets.csv"**.
+
+```{r}
+#wir lassen uns unser derzeitiges Arbeitsverzeichnis anzeigen
+getwd()
+
+#Beispielbefehl, der uns alle Dateien im aktuellen Arbeitsverzeichnis anzeigt
+list.files(".")
+#wir können eine Ebene "drüber" gehen, indem wir ".." schreiben (wie auf Unix Systemen)
+list.files("..")
+#zwei Ebenen drüber
+list.files("../..")
+
+```
+
+
 
 ## Rmarkdown
 
@@ -65,15 +83,15 @@ Das besondere an Rmarkdown ist, dass neben (Markdown-)Text auch ausführbarer Co
 
 ```{r}
 #das hier ist ein Kommentar
-#so können wir Daten aus eineer Datei laden
-data("twitch_data")
+#so können wir Daten, welche in einem Paket enthalten sind, laden:
+data("tiktok_celebs", package = "DSOS")
 
 ```
 
 
-Man kann auch *inline-code* verwenden, das sieht dann so aus: Der Datensatz umfasst `r dim(twitch_data)[1]` Beobachtungen.
+Man kann auch *inline-code* verwenden, das sieht dann so aus: Der Datensatz umfasst `r dim(tiktok_celebs)[1]` Beobachtungen.
 
-Dies erlaubt es, ein Dokument mit relativen Bezügen zu erstellen, ähnlich einer Excel-Tabelle! Wenn sich also bspw. die Datengrundlage ändert, müssen wir nicht mühsam alle Bezüge im Text anpassen. Noch fortgeschrittener lassen sich sogenannte _parameterisierte_ Reports erzeugen, bei dem man dem Befehl zur Erzeugung des Dokuments einen oder mehrere Parameter beifügt. Auf diese Weise lassen sich automatisiert Reports zu verschiedenen Themen erzeugen, bspw. Auswertungen je Land, Branche, Kunde etc.!
+Dies erlaubt es, ein Dokument mit relativen Bezügen zu erstellen, ähnlich einer Excel-Tabelle! Wenn sich also bspw. die Datengrundlage ändert, müssen wir nicht mühsam alle Bezüge im Text anpassen. Etwas fortgeschrittener lassen sich sogenannte _parameterisierte_ Reports erzeugen, bei dem man dem Befehl zur Erzeugung des Dokuments einen oder mehrere Parameter beifügt. Auf diese Weise lassen sich automatisiert Reports zu verschiedenen Themen erzeugen, bspw. Auswertungen je Land, Branche, Kunde etc.! 
 
 ### Fortgeschrittener: Verschiedene Outputs, LateX-Elemente
 
@@ -89,11 +107,11 @@ Hinter Rmarkdown steckt ein Programm namens **pandoc**. Dieses macht aus dem Rma
 
 #### Aufgabe 1.2
 
-Ändert nun im Header des Dokuments unter "params" den Parameter `game_title` von "Fortnite" zu "League of Legends" und klickt erneut auf "knit". Was hat sich verändert?
+klickt auf "Knit with parameters" und ändert den Parameter `game_title` von "Fortnite" zu "League of Legends". Was hat sich verändert?
 
 #### Aufgabe 1.3
 
-Verändert im Header des Dokuments des Parameter hinter "output" zu `word_document`. Was passiert?
+Verändert im Header des Dokuments den Parameter hinter "output" zu `word_document` und knitted erneut. Was passiert?
 
 #### Aufgabe 1.4
 
@@ -280,7 +298,7 @@ Was ihr innerhalb der `lm()` (steht für _linear model_) Funktion seht, ist der 
 
 ```{r}
 #summary Funktion auf einen Dataframe angewandt
-summary(twitch_data)
+summary(tiktok_celebs)
 ```
 
 Die `summary()` Funktion macht in diesem Fall nicht anderes, als gängige zusammenfassende Statistiken zu berechnen. Das kann man natürlich auch manuell machen:

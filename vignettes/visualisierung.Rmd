@@ -30,7 +30,7 @@ hist(x)
 
 Dies führt dazu, dass wir sehr penibel und rigide auf die Reihenfolge achten müssen. Hinzukommt, dass sobald die Grafiken komplexer werden, wir sehr viel Code schreiben müssen, der sehr schnell sehr unübersichtlich wird. Ein anderer Ansatz zu Visualisierung in R stellt ggplot2 dar.
 
-## Das ggplot2 Paket
+## Das ggplot2 Paket = = = = = = = 
 
 Das Paket ggplot2 ist ein alternativer Framework zur Erstellung von Grafiken mit R. Es basiert auf der _grammar of graphics_, der ein bestimmtes System, Grafiken zu formulieren, innewohnt. GGplot2 ist teil des tidyverses, funktioniert also besonders gut mit Daten die _tidy_ sind und arbeitet reibungslos mit anderen Paketen des tidyverses, wie bspw. dplyr zusammen.
 
