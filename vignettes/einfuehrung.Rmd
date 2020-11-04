@@ -19,7 +19,7 @@ Wenn ihr den Titel des Seminars betrachtet ("Data Science im Marketing: Social M
 
 Ihr sollt dabei vor Allem lernen, diese Schritte sauber und nachvollziehbar zu vollziehen. Desweiteren sollt ihr lernen, euch selbständig zu informieren und Probleme eigenständig zu lösen. Ich gebe euch dabei im Rahmen der Präsenztermine einige Beispiele, verweise euch auf hilfreiche Ressourcen und stehe mit Rat und Tat zur Seite, ihr müsst aber ein gewisses Maß an Eigenmotivation mitbringen und den Willen, auch mal selber rumzuprobieren.
 
-### Was wir in der ersten Woche machen werden
+### Was wir in den ersten Sitzungen machen werden
 
 1. Einarbeitung in Grundlegende R-Funktionen und die RStudio IDE
 2. Arbeiten mit Rmarkdown Dokumenten
@@ -29,11 +29,11 @@ Ihr sollt dabei vor Allem lernen, diese Schritte sauber und nachvollziehbar zu v
 
 ### Was wir in der zweiten (und eventuell dritten) Woche machen werden
 
-1. Twitter Daten sammeln lernen
-2. Verschiedene Auswertungsmöglichkeiten für Twitter-Daten kennenlernen
+1. Scoial Media Daten sammeln lernen
+2. Verschiedene Auswertungsmöglichkeiten für Social-Media-Daten kennenlernen
     - deskriptive Analyse
-    - Visualisierungsmöglichkeiten: Wordclouds & Netzwerke
-    - Sentiment-Analyse
+    - Visualisierungsmöglichkeiten (bspw. Wordclouds & Netzwerke)
+    - Text-Analyse (NLP Grundlagen, Sentiment scoring)
 3. Interessante Fragestellungen für eure Seminarbeiten erarbeiten
 
 Was wir aus Zeit- und Komplexitätsgründen vernachlässigen werden, obwohl es grundlegende Bestandteile der Data Science sind:
@@ -306,10 +306,10 @@ Die `summary()` Funktion macht in diesem Fall nicht anderes, als gängige zusamm
 
 ```{r}
 #beachtet das na.rm Argument! Dieses sagt, dass fehlende Werte nicht berücksichtigt werden sollen!
-mean(twitch_data$view_count, na.rm = TRUE)#arithmetisches Mittel
-min(twitch_data$view_count, na.rm = TRUE)#Minimum (kleinster Wert in der Auswahl)
-max(twitch_data$view_count, na.rm = TRUE)#Maximum (größter Wert in der Auswahl)
-sd(twitch_data$view_count, na.rm = TRUE)#Standardabweichung
+mean(tiktok_celebs$stats_shareCount, na.rm = TRUE)#arithmetisches Mittel
+min(tiktok_celebs$stats_shareCount, na.rm = TRUE)#Minimum (kleinster Wert in der Auswahl)
+max(tiktok_celebs$stats_shareCount, na.rm = TRUE)#Maximum (größter Wert in der Auswahl)
+sd(tiktok_celebs$stats_shareCount, na.rm = TRUE)#Standardabweichung
 
 ```
 
@@ -342,7 +342,7 @@ print(
         "mit einem Minimum von ", stats$min, 
         " und einem Maximum von ", stats$max))  
 }
-describe_stats(twitch_data$viewer_count)
+describe_stats(tiktok_celebs$stats_shareCount)
 
 ```
 
@@ -365,8 +365,8 @@ library(tidyverse)
 In der Regel möchte man nicht nur mit in R erzeugten Daten arbeiten, sondern arbeitet mit einem bereits in anderer Form existierenden Datensätzen. Diese können verschiedenste Dateiformate haben und für eigentlich jedes erdenkliche Dateiformat existieren R-Funktionen, mit denen es möglich ist sie in R zu laden. Einige sind standardmäßig in R enthalten, wie bspw. für sogenannte `separated value` Dateien. Das sind Textdateien, in denen jeder Wert durch einen bestimmten `delimiter` (Komma, Semikolon oder Tab) getrennt ist. Dieses Dateiformat ist sehr weit verbreitet und für "flache" Daten (zweidimensionale Tabellen) auch recht gut geeignet. Eine Quelle von Problemen sind die lokal unterschiedliche Verwendung von Zeichen. In Deutschland ist es u.A. üblich, Kommata als Dezimaltrennzeichen zu verwenden, während im englischsprachigen Ausland hierfür Punkte verwendet werden. Dies kann zu Konflikten führen, wenn Kommata als Trennzeichen verwendet werden. Ihr müsst deshalb immer wissen, wie die Daten formatiert wurden und die Argumente der Einlesefunktionen richtig setzen:
 
 ```{r, eval = FALSE}
-?read.csv()
-?write.csv()
+?read_csv()
+?write_csv()
 
 
 ```
@@ -382,20 +382,19 @@ Es gibt unter alteingesessenen Nutzern rege Diskussion darüber, was denn "besse
 Anbei ein kleines Beispiel, was den Unterschied veranschaulichen soll:
 
 ```{r eval=TRUE, message=FALSE, warning=FALSE, include=TRUE}
-#Aufgabe: "Gib mir die 10 Streamer des Spiels "Dota 2" mit den höchsten Zuschauerzahlen"
+#Aufgabe: "Gib mir alle Posts von Will Smith und zeige mir nur den Nickname, sharecount und die description an"
 
 #mit basis R
-twitch_data[grepl("Dota 2", twitch_data$game_title),][1:10,c(12, 6)]
+tiktok_celebs[grepl("Will Smith", tiktok_celebs$author_nickname),][, c(1,4,14)]
 
 #tidy
-twitch_data %>% 
-  filter(game_title == "Dota 2") %>% 
-  select(login, viewer_count) %>%
-  head(10)
+tiktok_celebs %>% 
+  filter(author_nickname == "Will Smith") %>% 
+  select(author_nickname, stats_shareCount, desc) 
 
 ```
 
-Wie ihr seht kommen beide Varianten zum selben Ergebnis, die tidy-variante ist aber wesentlich übersichtlicher. Es gibt wahrscheinlich noch bessere Möglichkeiten mit Basis R zum selben Ergebnis zu kommmen, aber diese ist die, die mir eingefallen ist. 
+Wie ihr seht kommen beide Varianten zum selben Ergebnis, die tidy-variante ist aber wesentlich übersichtlicher und lesbarer fuer Leute die sich nicht mit Rs spezifischem Array-Indexing auskennen. Es gibt wahrscheinlich noch bessere Möglichkeiten mit Basis R zum selben Ergebnis zu kommmen, aber diese ist die, die mir eingefallen ist. 
 
 ***
 
