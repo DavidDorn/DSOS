@@ -3,13 +3,13 @@ title: "Scraping von Twitter Daten"
 author: "David Dornekott"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Einführung in R}
+  %\VignetteIndexEntry{Scraping von Twitter Daten}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 library(tidyverse)
 ```
 
@@ -154,7 +154,7 @@ Netzwerkgraphen sind ein Thema für sich und die Erstellung aussagekräftiger, g
 
 Bisher haben wir die "statische" API von Twitter betrachtet. Es gibt noch eine komplett andere API, die man dazu verwenden kann, Tweets live zu empfangen. Es wird jedoch nur ein Bruchteil der tatsächlich getätigten Tweets betrachtet (soweit ich weiß im 1% Bereich). Für breiteren Zugang muss man mit Twitter in Geschäftsbeziehung stehen. Das geht bis zur sogenannten Firehose, bei der man dann 100% der Tweets erhalten kann. Firmen mit Firehose Zugriff lassen sich an einer Hand abzählen, da der Zugang nicht nur einen mindestens sechsstelligen Betrag im Monat kostet, sondern auch Rechenzentrum in der Größenordnung von Twitter selbst erordert. Die US Library of Congress hatte mal Firehose Zugang und die großen Geheimdienste vermutlich auch.
 
-Wir gengen uns erstmal damit, 1% der Tweets für 10 Sekunden zu streamen:
+Wir begnuegen uns erstmal damit, 1% der Tweets für 10 Sekunden zu streamen:
 
 ```{r}
 coca_cola <- stream_tweets("coke,coca cola,#coke", timeout = 10)
