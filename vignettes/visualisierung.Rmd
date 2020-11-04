@@ -196,7 +196,7 @@ Es existieren mittlerweile eine Reihe weiterer Pakete, welche ggplot2 um Zusatzf
 
 ```{r, eval=FALSE}
 library(gganimate)
-library(DSOSdata)
+library(DSOS)
 data(twitch_data)
 
 twitch_data %>% group_by(pulled) %>% summarize(concurrent_viewers = sum(viewer_count)) %>% ggplot(aes(x=pulled, y=concurrent_viewers))+
