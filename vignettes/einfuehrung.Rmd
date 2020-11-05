@@ -29,9 +29,9 @@ Ihr sollt dabei vor Allem lernen, diese Schritte sauber und nachvollziehbar zu v
 
 ### Was wir in der zweiten (und eventuell dritten) Woche machen werden
 
-1. Scoial Media Daten sammeln lernen
-2. Verschiedene Auswertungsmöglichkeiten für Social-Media-Daten kennenlernen
-    - deskriptive Analyse
+1. Social Media Daten sammeln lernen
+2. Verschiedene Auswertungsmöglichkeiten für Social Media Daten kennenlernen
+    - deskriptive Analyse ("wer sagt wann wie viel")
     - Visualisierungsmöglichkeiten (bspw. Wordclouds & Netzwerke)
     - Text-Analyse (NLP Grundlagen, Sentiment scoring)
 3. Interessante Fragestellungen für eure Seminarbeiten erarbeiten
@@ -40,7 +40,7 @@ Was wir aus Zeit- und Komplexitätsgründen vernachlässigen werden, obwohl es g
 
 1. Datenbanken
 2. Versionskontrolle (git)
-3. Interaktivität
+3. Interaktivität (ggf. kurz angerissen)
 4. Hosting
 
 
@@ -63,7 +63,7 @@ list.files(".")
 #wir können eine Ebene "drüber" gehen, indem wir ".." schreiben (wie auf Unix Systemen)
 list.files("..")
 #zwei Ebenen drüber
-list.files("../..")
+#list.files("../..")
 
 ```
 
@@ -388,10 +388,11 @@ In der Regel möchte man nicht nur mit in R erzeugten Daten arbeiten, sondern ar
 ?read_csv()
 ?write_csv()
 
-
 ```
 
-Das Dateiformat, mit dem ihr persönlich vermutlich am häufigsten gearbeitet habt, sind Excel-Workbooks (`.xlsx`). Falls euch Daten in dieser Form geliefert werden und ihr möchtet in R mit Ihnen arbeiten, habt ihr zwei Möglichkeiten. Entweder, ihr exportiert die Daten aus Excel im SV Format oder ihr benutzt ein externes Paket um mit Excel-Workbpoks zu interagieren, wie bspw. das `readxl` Paket. Wir konzentrieren uns im Rahmen des Seminars auf CSV Dateien.
+Das Dateiformat, mit dem ihr persönlich vermutlich am häufigsten gearbeitet habt, sind Excel-Workbooks (`.xlsx`). Falls euch Daten in dieser Form geliefert werden und ihr möchtet in R mit Ihnen arbeiten, habt ihr zwei Möglichkeiten. Entweder, ihr exportiert die Daten aus Excel im SV Format oder ihr benutzt ein externes Paket um mit Excel-Workbooks zu interagieren, wie bspw. das `readxl` Paket. Wir konzentrieren uns im Rahmen des Seminars auf CSV Dateien, da diese unter "Nicht-Entwicklern" das häufigste Dateiformat fuer Daten sind und nicht Plattform oder Sprachenspezifisch sind. 
+
+R hat auch eingebaute Dateiformate, welche es ermöglichen komplexere Datenstrukturen abzuspeichern. Ich würde euch empfehlen,
 
 
 ### Basis R vs. Tidyverse
@@ -414,7 +415,7 @@ tiktok_celebs %>%
 
 ```
 
-Wie ihr seht kommen beide Varianten zum selben Ergebnis, die tidy-variante ist aber wesentlich übersichtlicher und lesbarer fuer Leute die sich nicht mit Rs spezifischem Array-Indexing auskennen. Es gibt wahrscheinlich noch bessere Möglichkeiten mit Basis R zum selben Ergebnis zu kommmen, aber diese ist die, die mir eingefallen ist. 
+Wie ihr seht kommen beide Varianten zum selben Ergebnis, die tidy-variante ist aber wesentlich übersichtlicher und lesbarer fuer Leute die sich nicht mit R's spezifischem Array-Indexing auskennen. Es gibt wahrscheinlich noch bessere Möglichkeiten mit Basis R zum selben Ergebnis zu kommmen, aber diese ist die, die mir eingefallen ist. 
 
 ***
 
