@@ -68,7 +68,6 @@ Wir arbeiten heute mit einem Beispieldatensatz, welcher Daten zu Flügen aus New
 
 ```{r}
 
-#install.packages("nycflights13")
 library(nycflights13)
 
 
