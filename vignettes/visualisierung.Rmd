@@ -7,6 +7,23 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r setup, include = FALSE}
+library(tidyverse)
+packages <- installed.packages()
+DSOS_installed <- "DSOS" %in% packages[,"Package"]
+gganimate_installed <- "gganimate" %in% packages[,"Package"]
+```
+
+```{r, eval = DSOS_installed}
+library(DSOS)
+data(twitch_data)
+```
+
+```{r, eval = !DSOS_installed}
+load("./data/twitch_data.rda")
+```
+
+
 
 ## Datenvisualisierung in R
 
@@ -30,10 +47,9 @@ hist(x)
 
 Dies führt dazu, dass wir sehr penibel und rigide auf die Reihenfolge achten müssen. Hinzukommt, dass sobald die Grafiken komplexer werden, wir sehr viel Code schreiben müssen, der sehr schnell sehr unübersichtlich wird. Ein anderer Ansatz zu Visualisierung in R stellt ggplot2 dar.
 
-## Das ggplot2 Paket = = = = = = = 
+## Das ggplot2 Paket
 
-Das Paket ggplot2 ist ein alternativer Framework zur Erstellung von Grafiken mit R. Es basiert auf der _grammar of graphics_, der ein bestimmtes System, Grafiken zu formulieren, innewohnt. GGplot2 ist teil des tidyverses, funktioniert also besonders gut mit Daten die _tidy_ sind und arbeitet reibungslos mit anderen Paketen des tidyverses, wie bspw. dplyr zusammen.
-
+Das Paket ggplot2 ist ein alternativer Framework zur Erstellung von Grafiken mit R. Es basiert auf der *grammar of graphics*, der ein bestimmtes System, Grafiken zu formulieren, innewohnt. GGplot2 ist teil des tidyverses, funktioniert also besonders gut mit Daten die *tidy* sind und arbeitet reibungslos mit anderen Paketen des tidyverses, wie bspw. dplyr zusammen.
 
 ### Grammar of graphics
 
@@ -46,12 +62,14 @@ data(mpg)
 mpg #es geht wie ihr seht um Autos (genauer gesagt den Spritverbrauch)
 
 ```
+
 Ein Plot beginnt immer mit dem `ggplot()` Befehl:
 
 ```{r, eval=FALSE}
 ggplot(data = mpg) #zeichnet erstmal einen leeren plot
 
 ```
+
 Wir können etwas in den Plot zeichnen, indem wir ein + schreiben, gefolgt von verschiedensten Befehlen:
 
 ```{r}
@@ -59,9 +77,9 @@ ggplot(data = mpg)+
   geom_point(mapping = aes(x = displ, y = hwy))
 ```
 
-In diesem Fall haben wir zwei Dinge getan. Wir haben gesagt, dass wir einen Scatter-Plot haben wollen mit `geom_point()` und haben innerhalb dieser Funktion ein Argument namens `mapping` definiert. Dies haben wir mit der Funktion `aes()` getan. Diese steht für _aesthetics_ und gibt quasi an, was abgebildet werden soll. Wir geben also ein *wie* und ein *was* an. Man kann das *was* auch direkt am Anfang in die ggplot() Funktion einfügen, in diesem Fall werden die _aesthetics_ für alle weiteren _geoms_ übernommen!
+In diesem Fall haben wir zwei Dinge getan. Wir haben gesagt, dass wir einen Scatter-Plot haben wollen mit `geom_point()` und haben innerhalb dieser Funktion ein Argument namens `mapping` definiert. Dies haben wir mit der Funktion `aes()` getan. Diese steht für *aesthetics* und gibt quasi an, was abgebildet werden soll. Wir geben also ein *wie* und ein *was* an. Man kann das *was* auch direkt am Anfang in die ggplot() Funktion einfügen, in diesem Fall werden die *aesthetics* für alle weiteren *geoms* übernommen!
 
-Abgebildet wurde in diesem Fall eine Variable "displ" (englisch _displacement_, zu deutsch _Hubraum_) auf der x-Achse und eine Variable "hwy" (steht für highway, bedeutet im Kontext des Datensatzes den Spritverbrauch in _miles per gallon_ auf dem Highway). 
+Abgebildet wurde in diesem Fall eine Variable "displ" (englisch *displacement*, zu deutsch *Hubraum*) auf der x-Achse und eine Variable "hwy" (steht für highway, bedeutet im Kontext des Datensatzes den Spritverbrauch in *miles per gallon* auf dem Highway).
 
 Wenn uns die Farbe der Punkte nicht gefällt, können wir sie anpassen. Beispielsweise so:
 
@@ -71,8 +89,6 @@ ggplot(data = mpg)+
 #wir können Farben entweder benennen (da haben wir nicht ganz so viel Auswahl), oder wir benutzen einen sogenannten "hexcode", das sieht dann bspw. so aus: #0af0cd
 #hex codes bekommt ihr über Google oder auch als RStudio addin!
 ```
-
-
 
 Wir können auch das Aussehen der Punkte von anderen Eigenschaften abhängen lassen, bspw. ihre Farbe:
 
@@ -84,14 +100,12 @@ ggplot(data = mpg) +
 
 In diesem Fall haben wir eine weitere Variable "class" (steht für den Typ des Autos) mit aufgenommen, welche die Farbe der Punkte verändert. Wir könnten stattdessen auch die Form der Punkte verändern:
 
-
 ```{r}
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy, shape = class))
 ```
 
 Oder die größe:
-
 
 ```{r}
 ggplot(data = mpg) + 
@@ -101,7 +115,6 @@ ggplot(data = mpg) +
 
 Nicht so schön... Lieber wieder Farbe für Typ *und* Marke als Form:
 
-
 ```{r}
 
 ggplot(data = mpg) + 
@@ -110,8 +123,7 @@ ggplot(data = mpg) +
 
 Das sieht doch schon mal recht informativ aus (davon abgesehen, dass wir 15 Hersteller haben und nur 6 Formen und die Legende abgeschnitten ist...).
 
-
-## Mehrere Plots mit facet_wrap()
+## Mehrere Plots mit facet\_wrap()
 
 Mit ggplot2 wird es uns sehr einfach gemacht, mehrere Plots auf einmal zu machen. Dies wird durch die Funktion `facet_wrap()` ermöglicht. Ich brauche der Funktion nur eine (nicht metrisch skalierte) Variable als Argument geben und erhalte für jedes Level der Variable einen eigenen Plot! In diesem Fall können dies bspw. 15 getrennte Plots für die 15 Hersteller sein:
 
@@ -136,7 +148,6 @@ ggplot(data = mpg, aes(x = displ, y = hwy)) +
 
 ```
 
-
 ### Titel, Legenden, Achsen-Beschriftung etc.
 
 Man kann so gut wie alles anpassen, was man möchte. Ein Titel lässt sich am einfachsten über `ggtitle()` einfügen:
@@ -149,7 +160,6 @@ standard_plot <- ggplot(data = mpg) +
 #dann muss ich nicht alles immer wiederholen:
 standard_plot + ggtitle("Hubraum vs. Spritverbrauch")
 ```
-
 
 Den Titel kann ich natürlich auch noch beliebig anpassen (bspw. innerhalb der `theme()` Funktion):
 
@@ -180,24 +190,12 @@ standard_plot+
   theme_dark()
 ```
 
-
-
-
-
-
-
-
-
-
-
 ## Weitere auf ggplot aufbauende Pakete
 
-Es existieren mittlerweile eine Reihe weiterer Pakete, welche ggplot2 um Zusatzfunktionen erweitern. Eines meiner persönlichen Favoriten ist `gganimate`, welches es erlaubt animierte Plots zu erstellen. 
+Es existieren mittlerweile eine Reihe weiterer Pakete, welche ggplot2 um Zusatzfunktionen erweitern. Eines meiner persönlichen Favoriten ist `gganimate`, welches es erlaubt animierte Plots zu erstellen.
 
-```{r, eval=FALSE}
+```{r, eval = gganimate_installed}
 library(gganimate)
-library(DSOS)
-data(twitch_data)
 
 twitch_data %>% group_by(pulled) %>% summarize(concurrent_viewers = sum(viewer_count)) %>% ggplot(aes(x=pulled, y=concurrent_viewers))+
   geom_line(color = "#ffd700")+
@@ -216,9 +214,7 @@ twitch_data %>% group_by(pulled) %>% summarize(concurrent_viewers = sum(viewer_c
 
 ```
 
-
-
-Es gibt auch Pakete für Geodaten, wie bspw. `ggmap`, mit welchen ihr Karten erstellen könnt (vielleicht dazu später mehr). Ein neueres Paket, welches ich sehr cool finde, ist [Rayshader](https://www.rayshader.com). Damit lassen sich (animierte) 3D-Plots erzeugen. ([wie sowas hier](https://twitter.com/tylermorganwall/status/1134069089087950848?lang=de)
+Es gibt auch Pakete für Geodaten, wie bspw. `ggmap`, mit welchen ihr Karten erstellen könnt (vielleicht dazu später mehr). Ein neueres Paket, welches ich sehr cool finde, ist [Rayshader](https://www.rayshader.com). Damit lassen sich (animierte) 3D-Plots erzeugen. ([wie sowas hier](https://twitter.com/tylermorganwall/status/1134069089087950848?lang=de))
 
 ### Aufgaben
 
