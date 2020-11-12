@@ -9,13 +9,13 @@ vignette: >
 
 ## Das tidy Prinzip
 
-Ein Begriff der bisher schon häufiger gefallen ist, ist _tidy_. Tidy bezieht sich dabei einerseits auf die Eigenschaft eines Datensatzes, eine bestimmte Form zu haben und andererseits auf Methoden, mit solchen Datensätzen zu arbeiten.
+Ein Begriff der bisher schon häufiger gefallen ist, ist *tidy*. Tidy bezieht sich dabei einerseits auf die Eigenschaft eines Datensatzes, eine bestimmte Form zu haben und andererseits auf Methoden, mit solchen Datensätzen zu arbeiten.
 
 Ein Datensatz ist tidy, wenn er folgende eigenschaften hat:
 
-  - jede *Variable* hat ihre eigene *Spalte*
-  - jede *Beobachtung* hat ihre eigene *Zeile*
-  - jeder Wert hat seine eigene Zelle
+-   jede *Variable* hat ihre eigene *Spalte*
+-   jede *Beobachtung* hat ihre eigene *Zeile*
+-   jeder Wert hat seine eigene Zelle
 
 Der folgende Beispieldatensatz ist tidy:
 
@@ -43,31 +43,30 @@ Wenn ihr schon einmal mit echten Daten gearbeitet habt, wie bspw. offiziellen St
 Das tidyverse bezeichnet eine Sammlung von Paketen, die auf dem tidy-Prinzip beruhen. Schlüsselfigur und "Gesicht" des tidyverses ist Hadley Wickham (<https://en.wikipedia.org/wiki/Hadley_Wickham>), ein neuseeländischer Statistiker der hinter viele der grundlegenden Pakete selber geschrieben hat und als Koordinator des Projekts fungiert. Zusammen mit Garrett Grolemund hat der das "Standardwerk" der Data Science in R geschrieben ("R for Data Science") welches ich bereits verlinkt hatte (<https://r4ds.had.co.nz/>). Das Buch ist (zumindest in englischer Sprache) komplett kostenlos verfügbar und erklärt euch alles was ich euch im Folgenden erklären werde noch viel genauer und meiner Meinung nach didaktisch sehr gut. Einige der folgenden Beispiele sind basieren auf diesem Buch.
 
 Das tidyverse besteht mittlerweile aus über 20 einzelnen Paketen. Die prominentesten sind dabei:
-  
-  - readr: Enthält Funktionen um Daten einzulesen und zu speichern (ersetzen Basisfunktionen)
-  - tidyr: Enthält Funktionen um Daten in "tidy" Form zu bringen
-  - dplyr: Enthält Funktionen um Daten zu transformieren
-  - ggplot2: Framework für Datenvisualisierung
-  - magrittr: Enthält die _pipe_, mit der wir Funktionen aneinanderreihen können
-  
+
+-   readr: Enthält Funktionen um Daten einzulesen und zu speichern (ersetzen Basisfunktionen)
+-   tidyr: Enthält Funktionen um Daten in "tidy" Form zu bringen
+-   dplyr: Enthält Funktionen um Daten zu transformieren
+-   ggplot2: Framework für Datenvisualisierung
+-   magrittr: Enthält die *pipe*, mit der wir Funktionen aneinanderreihen können
+
 Ebenso sind einige "kleinere" Pakete enthalten welche die Arbeit mit bestimmten Datentypen erleichtern (`stingr` für strings, `forcats` für Faktoren).
 
-Als ihr das tidyverse installiert bzw. in R geladen habt, habt ihr nicht die Pakete direkt geladen, sondern ein Paket, welches dann wiederum andere Pakete lädt. Der Zweck dahinter ist, dass Pakete, die sowieso sehr häufig im selben Script verwendet werden, nicht müßsam einzeln geladen werden müssten. Hierdurch ladet ihr aber nur einige Kern-Pakete, das sehr nützliche Paket `lubridate` wird zum beispiel nicht mitgeladen. Das müsst ihr dann manuell tun, oder ihr benutzt ` paket::funktionsname()` um bestimmte Funktionen zu benutzen ohne das gesamte Pakete zu laden.
+Als ihr das tidyverse installiert bzw. in R geladen habt, habt ihr nicht die Pakete direkt geladen, sondern ein Paket, welches dann wiederum andere Pakete lädt. Der Zweck dahinter ist, dass Pakete, die sowieso sehr häufig im selben Script verwendet werden, nicht müßsam einzeln geladen werden müssten. Hierdurch ladet ihr aber nur einige Kern-Pakete, das sehr nützliche Paket `lubridate` wird zum beispiel nicht mitgeladen. Das müsst ihr dann manuell tun, oder ihr benutzt `paket::funktionsname()` um bestimmte Funktionen zu benutzen ohne das gesamte Pakete zu laden.
 
 ## tibble statt Dataframes
 
 Die Pakete des tidyverses basieren allesamt auf Daten in tabellarischer Form. Sie benutzen allerdings keine normalen R Dataframes, sondern sogenannte `tibble`. Tibble sind ein "superset" der Dataframes, d.h. alle Funktionen die mit Dataframes funktionieren, funktionieren auch mit tibblen. Aber sie haben einige Eigenschaften, welche die Arbeit mit ihnen erleichtern. Den größten Unterschied sieht man beim "printen" eines dataframes vs. tibbles. Vom ersteren werden immer die ersten 1000 Elemente geprintet, egal wie groß diese sind. Das kann bei großen Datensätzen im schlimmsten Fall euren gesamten Rechner lahmlegen! Bei tibbeln werden standardmäßig immer nur die ersten 10 Zeilen gedruckt und man bekommt eine Übersicht über alle Spalten und die Dimensionen des Datensatzes. Das ganze geht super schnell, egal wie groß der eigentliche Datensatz ist.
 
-
-
 ## Das dplyr Paket
 
-Das dplyr Paket enthält Funktionen, die es uns ermöglichen Datensätze zu transformieren, d.h. Variablen zu selektieren, neue Variablen zu erstellen und Werte anhand bestimmter Kriterien auszuwählen und zu sortieren. Der Syntax verwendet dabei bestimmte *Verben*, welche an gängige *SQL* Befehle angelehnt sind. 
+Das dplyr Paket enthält Funktionen, die es uns ermöglichen Datensätze zu transformieren, d.h. Variablen zu selektieren, neue Variablen zu erstellen und Werte anhand bestimmter Kriterien auszuwählen und zu sortieren. Der Syntax verwendet dabei bestimmte *Verben*, welche an gängige *SQL* Befehle angelehnt sind.
 
 Wir arbeiten heute mit einem Beispieldatensatz, welcher Daten zu Flügen aus New York City aus dem Jahre 2013 enthält. Dieser ist im Paket `nycflights13` enthalten:
 
 ```{r}
 
+#install.packages("nycflights13")
 library(nycflights13)
 
 
@@ -75,13 +74,11 @@ flights
 
 ```
 
-
 ## dplyr "Verben"
 
 ### Variablen wählen mit select()
 
 Die `select()` Funktion erlaubt es uns, wie der Name schon ganz gut beschreibt, Variablen zu selektieren, also auszuwählen. Das erste Argument ist dabei immer ein Datenobjekt, gefolgt von den Namen der Variablen, die wir selektieren möchten. Die select Funktion modifiziert nie das Datenobjekt direkt, sondern erzeugt immer nur neue! Wenn ihr diese behalten möchtet, müsst ihr sie einem neuen Objekt zuweisen.
-
 
 ```{r}
 library(tidyverse)
@@ -98,7 +95,6 @@ select(flights, -year)
 select(flights, -(year:dep_time))
 
 ```
-
 
 Gerade bei sehr großen Datensätzen mit vielen Variablen mit ähnlichen Namen kann es schwierig sein, genau die richtigen zu finden. Es gibt zum Glück Funktionen, die uns dabei helfen:
 
@@ -120,6 +116,7 @@ select(as.data.frame(matrix(c(1,2,3,4,5,6,7,8,9), nrow=3,ncol=3)), num_range("V"
 
 
 ```
+
 Wenn ihr den gesamten Datensatz behalten möchtet, aber nur die Reihenfolge der Variablen verändern oder diese umbenennen wollt, könnt ihr das wie folgt tun:
 
 ```{r}
@@ -137,7 +134,7 @@ select(flights, arr_time, arr_delay, everything())
 
 ```
 
-***
+------------------------------------------------------------------------
 
 #### Aufgaben select()
 
@@ -149,9 +146,7 @@ Ladet wieder den Twitch-Datensatz aus der letzten Stunde. Wählt alle Variablen 
 
 Benennt im Twitch Datensatz die missverständliche Variable "login" um, damit der Name aussagekräftiger wird.
 
-
-***
-
+------------------------------------------------------------------------
 
 ### Beobachtungen wählen mit filter()
 
@@ -181,7 +176,7 @@ filter(flights, month == 12, month == 1)
 filter(flights, month == 12 | month == 1)
 
 #ich persönlich benutze für solche Fälle lieber den %in% Operator:
-filter(flights, month%in% c(1,12))
+filter(flights, month %in% c(1,12))
 
 #wenn nicht diskrete Ereignisse geprüft werden sollen, sondern Bereiche, lassen sich viele "oder" Prüfungen in "und"-Prüfungen umdenken:
 
@@ -193,7 +188,7 @@ filter(flights, arr_time <= 600, arr_delay <= 30)
 
 ```
 
-***
+------------------------------------------------------------------------
 
 ### Aufgaben filter()
 
@@ -201,7 +196,7 @@ filter(flights, arr_time <= 600, arr_delay <= 30)
 
 Wir betrachten wieder den Twitch Datensatz. Wählt alle Streams aus, die vom Streamer "ninja" gestreamt wurden und mehr als 10 000 Zuschauer hatten.
 
-***
+------------------------------------------------------------------------
 
 ### Reihenfolge verändern mit arrange()
 
@@ -218,8 +213,6 @@ arrange(flights, desc(dep_delay))
 ```
 
 Fehlende Werte landen immer am Ende!
-
-
 
 ### Neue Variablen erzeugen mit mutate()
 
@@ -244,7 +237,6 @@ transmute(flights, kph = distance/air_time*60, mph = kph/1.62)
 ```
 
 Es gibt eine Reihe an Funktionen die bei der Erzeugung neuer Variablen hilfreich sind. Hier sind einige:
-
 
 ```{r}
 #die üblichen Statistiken mean/sd/min/max
@@ -281,21 +273,17 @@ percent_rank(y)
 cume_dist(y)
 ```
 
-***
+------------------------------------------------------------------------
 
 ### Aufgaben mutate()
 
 #### Aufgabe 3.4
 
+------------------------------------------------------------------------
 
+#### Anhand von Variablen gruppieren mit group\_by() und Gruppen zusammenfassen mit summarize()
 
-
-***
-
-#### Anhand von Variablen gruppieren mit group_by() und Gruppen zusammenfassen mit summarize()
-
-
-Die obigen Befehle werden vor Allem nützlich wenn wir sie auf _gruppierte_ Daten anwenden. Gruppieren heißt, wir fassen alle Beobachtungen, die bei einer bestimmten Variable die selbe Ausprägung haben, zusammen und können mit den Gruppen weiterarbeiten. 
+Die obigen Befehle werden vor Allem nützlich wenn wir sie auf *gruppierte* Daten anwenden. Gruppieren heißt, wir fassen alle Beobachtungen, die bei einer bestimmten Variable die selbe Ausprägung haben, zusammen und können mit den Gruppen weiterarbeiten.
 
 ```{r}
 #ich kann anhand einer Variable gruppieren
@@ -315,7 +303,6 @@ summarize(ungroup(flights_by_day), mean_arr_delay = mean(arr_delay, na.rm=T))
 ```
 
 Oben haben wir den gruppierten Datensatz zwischengespeichert, um dann mit ihm weiterarbeiten zu können. Wir können stattdessen die pipe `%>%` benutzen, um mehrere aufeinanderfolgende Aktionen durchführen zu können, ohne Zwischenschritte abspeichern zu müssen. Wie euch vielleicht aufgefallen ist, nehmen alle dplyr Verben als erstes Argument ein Datenobjekt und geben als Output erneut einen Datensatz aus. Das macht sie inhährent "pipable":
-
 
 ```{r}
 
@@ -349,4 +336,72 @@ Benutzt wieder den Twitch Datensatz. Erzeugt eine neue Variable, die angibt, wie
 #### Aufgabe 3.7
 
 Wie viele Prozent der Streams läuft 5 Stunden oder länger? (das ist schon ziemlich next level)
+
+
+## Spalten zusammenfassen und Zeilen "auftrennen"
+
+Etwas fortgeschrittenere Operationen, welche aber auch öfter mal notwendig sind, sind einerseits das Zusammenführen mehrerer Spalten und andererseits das "auftrennen" einer Spalte in mehrere. 
+
+```{r}
+
+tidy_4a <- table4a %>% pivot_longer(cols = c('1999', '2000'), names_to = "year") %>% rename(cases = value)
+tidy_4b <- table4b %>% pivot_longer(cols = c('1999', '2000'), names_to = "year") %>% rename(population = value)
+tidy_4a
+```
+
+
+## Datensätze kombinieren: joins
+
+Man hat sehr häufig die Situation, dass man mehrere getrennte Datensätze hat die man zusammenführen möchte. Dies kann der Fall sein, wenn wie beim Beispiel zu Beginn die Daten in getrennten Tabellen geliefert werden. Man kann Datensätze zusammenführen, indem man einen sogenannten *join* durchführt. Es gibt verschiedene Arten von joins, gemeinsam haben alle dass man bestimmte Variablen definieren muss, die man *keys* nennt. Keys sind Variablen, welche beide Datensätze gemein haben. In den Tabellen mit Fällen und Einwohnerzahlen für veschiedene Länder mit denen wir bereits gearbeitet haben wären das bspw. die Variablen `country` und `year`:
+
+```{r}
+left_join(tidy_4a, tidy_4b)
+```
+
+Hier wurde ein sogenannter `left_join` verwendet. Bei diesem wird der "linke" Dataframe "festgehalten" und überall da etwas hinzugefügt, wo es passende Beobachtungen im "rechten" Dataframe gibt. Heißt, wir haben am Ende immer genau so viele Zeilen wie der "linke" Dataframe vorher hatte. Weiterhin existieren  der `right_join`, `inner_join` und `full_join`:
+
+```{r}
+linker_dataframe <- tibble(
+  name = c("Peter", "Paul", "Thomas", "Hendrik", "Marius"),
+  alter = c(22,24,28,19,20),
+  status = c("student", "angestellter", "student", "schüler", "student")
+)
+
+rechter_dataframe <- tibble(
+  name = c("Peter", "Paul", "Hendrik", "Marie"),
+  einkommen = c(800,1800,150, 2200),
+  besitzt_auto = c(FALSE, TRUE, FALSE, TRUE)
+)
+
+#füge zu jeder Zeile in links die neuen Spalten aus rechts hinzu, wenn vorhanden
+left_join(linker_dataframe, rechter_dataframe)
+
+#füge zu jeder Zeile in rechts die neuen Spalten aus links hinzu, wenn vorhanden
+right_join(linker_dataframe, rechter_dataframe)
+
+#verbinde nur die Zeilen die in links UND rechts vorhanden sind
+inner_join(linker_dataframe, rechter_dataframe)
+
+#verbinde alle Zeilen aus links ODER rechts
+full_join(linker_dataframe, rechter_dataframe)
+
+```
+
+Oft genügt nicht eine einzige Key-variable, um einzelne Beobachtungen zu identifizieren. So könnte in unserem oberen Beispiel ein Vorname auch mehrfach vorkommen. In diesem Fall wäre die Variable nicht mehr *uniquely identifying* und wir bekommen unter Umständen falsche matches. Deswegen sollte man beim Anlegen von Datensätzen immer darauf achten, eine Variable mitzuerzeugen die jede Beobachtung eindeutig identifiziert (wie bspw. Kundennummer, Transaktionsnummer, Userid usw.)
+
+```{r}
+rechter_dataframe2 <- tibble(
+  name = c("Peter", "Paul", "Hendrik", "Marie", "Peter", "Marie"),
+  einkommen = c(800,1800,150, 2200, 900, 3200),
+  besitzt_auto = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE)
+)
+
+#was passiert wenn wir jetzt joinen?
+left_join(linker_dataframe, rechter_dataframe2)
+
+```
+Wenn also Zuordnungen nicht eindeutig möglich sind, werden Werte kopiert! Das kann zu sehr unschönen Ergebnissen führen. Deshalb: Entweder über zwei Variablen joinen, von denen man weiß, dass sie jeweils eine Beobachtung identifizieren (wie bspw. `country` und `year` im vorigen Beispiel) oder eine neue Variable erzeugen, die diese Rolle übernimmt.
+
+
+_Kurze Diskussionsfrage:_ Warum glaubt ihr werdet ihr so oft nach eurer Telefonnummer gefragt?
 
