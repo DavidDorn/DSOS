@@ -1,13 +1,13 @@
 ---
-title: "Scraping von Twitter Daten"
-author: "David Dornekott"
-date: "`r Sys.Date()`"
-output: 
-html_document:
-  toc: TRUE
+title: "Tweets mit dem rtweet Paket"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Tweets mit dem rtweet Paket}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALS}
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 library(tidyverse)
 library(rtweet)
