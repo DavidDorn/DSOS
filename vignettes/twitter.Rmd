@@ -1,0 +1,281 @@
+---
+title: "Scraping von Twitter Daten"
+author: "David Dornekott"
+date: "`r Sys.Date()`"
+output: 
+html_document:
+  toc: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(tidyverse)
+library(rtweet)
+```
+
+## Die Twitter API
+ Twitter bietet eine sogenannte API (Application Programming Interface) an, mit der es möglich ist maschinell und automatisiert mit dem Twitter-Dienst zu interagieren. APIs haben verschiedenste *endpoints*, an die man sogenannte *requests* schicken kann. Jeder von uns sendet jeden Tag hunderte bis tausende solche requests ohne es zu merken. Wenn wir bspw. einem Link folgen, sendet unser Browser einen *GET-request* an den Server, ihm ein bestimmtes HTML-Dokument zuzusenden. Viele Webseiten bieten neben dem üblichen URL-Schema auch Möglichkeiten an, Daten in für maschinen verwendbaren Formaten anzufordnern und nicht für den menschlichen Konsum in Form von HTML. Dies erlaubt es, programmatisch mit Webdiensten zu interagieren und bspw. Applikationen zu erstellen, die auf diesen Diensten aufbauen (wie bspw. third-party clients). In der Regel benötigt man hierfür eine Berechtigung (*API-Key*), welcher einen dem Dienst gegenüber identifiziert. Dies soll Missbrauch vermeiden und ermöglicht es bpsw. dem Dienst, Nutungskontingente zu vergeben. In der Regel ist nur eine bestimmte Anzahl von requests in einem gegebenen Zeitraum möglich.
+ 
+APIs sind in der Regel sehr komplex und erfordern eine erhebliche Einarbeitung, da jeder Dienst einem anderen Schema folgt. In der Regel sieht es so aus, dass man einen Request mit verschiedenen Argumenten wie bspw. einem Suchwort, Suchzeitraum, Anzahl an widergegebenen Objekten, Authentifizierung versieht und abschickt.  Glücklicherweise haben uns diesen Arbeitsschritt in der Regel schon Andere abgenommen und sogenannte *Wrapper-Funktionen* geschrieben. ^[Teilweise pflegen die Dienste selber solche Pakete wie bspw. Reddit mit dem Python Reddit API Wrapper (PRAW, leider noch kein Port für R)] Das R-Paket *rtweet* enthält solche Wrapper-Funktionen und erleichtert den Umgang mit der Twitter API immens. So brauchen wir uns keine Gedanken über das richtige Schema zu machen, sondern geben Argumente an die Funktion, welche diese dann passend verpackt, abschickt und das Resultat für die weitere Verarbeitung formatiert. 
+
+### Authentifizierung
+
+
+Um mit der Twitter API zu interagieren muss man sich ihr gegen?ber authentifizieren. Mit neueren Versionen des rtweet Paket gen?gt hierzu ein normaler Twitter account: Wenn man eine der rtweet Funktionen verwendet, um einen Request an Twitter zu senden, ?ffnet sich ein Brower-Fenster wo eine dem Paket zugeh?rige Twitter-App nach Erlaubnis fragt, den Account zu verwenden. Alternativ kann man unter dev.twitter.com (Dummy-)Applikation erstellen (geht mit jedem normalen Twitter Account). Jede App erh?lt zugeh?rige Keys (token und secret), welche zur Authentifizierung verwendet werden k?nnen. In diesem Fall ergeben sich andere Berechtigungen und API limits und diese Variante ist zu empfehlen wenn man non-interaktiv auf die Twitter API zugreifen will (also bspw. ein Script schreibt, dass automatisch zu bestimmten Zeiten durchlaeuft). Unter [folgendem Link](https://github.com/ropensci/rtweet) findet ihr Erläuterungen zu Authentifizierungsmöglichkeiten, für's erste arbeiten wir mit der Authentifizierung über rwteet.
+
+
+### API Limits
+
+APIs dienen dem Dienst natürlich dazu, zu kontrollieren wie auf sie zugegriffen wird. Jedem authentifizierten Nutzer bzw. Applikation steht für einen gegebenen Zeitraum in der Regel nur ein begrenztes Kontingent an Requests zu. Bei Twitter darf ich bspw. nur eine bestimmte Anzahl von requests innerhalb von 15 Minuten tätigen. Verkompliziert wird das ganze dadurch, dass Twitter verschiedene getrennte "Buckets" hat, jeweils mit unterschiedlichen rate limits ( [hier findet ihr die offizielle Übersicht](https://developer.twitter.com/en/docs/basics/rate-limits) ). Ebenso hängt von dem angesprochenen Endpoint ab, wie viele Inhalte wir aber pro Request bekommen. Bspw. ist das Abfragen der timeline eines einzelnen Nutzers ein Request, genau wie eine Suche per Schlagwort. Die gute Nachricht für uns ist, dass uns die rate limits erst einmal nicht zu interessieren brauchen, da unsere Arbeit erstens nicht zeitkritisch ist und uns zweitens das von uns verwendete rtweet Paket die Arbeit abnimmt, wenn wir unsere limits überschreiten. Wir müssen dann nur einfach etwas länger warten. Wir köännen uns die limits auch anzeigen lassen:
+```{r, eval = FALSE}
+rtweet::rate_limit()
+```
+
+
+## Tweets mit rtweet
+
+Das rtweet Paket bietet uns ein gut durchdachtes Interface um in R mit der Twitter API zu arbeiten. Wenn wir bspw. die  n letzten Tweets eines bestimmten accounts haben möchten, können wir dies mit Hilfe der get_timeline() Funktion wie folgt tun:
+
+
+```{r}
+tweets <- get_timeline("janboehm", n = 5)
+tweets
+```
+
+Wenn ihr zum ersten mal in einer R-Stizung mit einer Funktion aus dem rtweet Paket auf die Twitter API zugreift, sollte sich ein Fenster öffnen, in der ihr dazu aufgerufen werdet euch bei Twitter einzuloggen und der dem rtweet-Palket zugfehörigen Twitter-Applikation die Erlaubnis zu erteilen, auf euren Account zuzugreifen (keine Sorge, niemand außer euch kann auf euren Account zugreifen!). Die Funktion gibt einen Dataframe (genaugenommen tibble, denn rtweet ist *tidy*) heraus, in dem jede Zeile einen tweet darstellt und jede Spalte (90 an der Zahl) verschiedenste dem tweet zugehoerige Informationen.^[wenn ihr nicht tidy arbeiten wollt könnt ihr als Argument `parsed=FALSE` reinnehmen, dann erhaltet ihr die Tweets in JSON Format!] Wir koennen uns die Variablennamen mit dem Befehl names(tweets) ausgeben lassen:
+```{r}
+names(tweets)
+```
+
+Man bekommt also eine ganze Menge Daten geliefert. Am Interessantesten f?r uns sind zun?chst die Variablen "screen_name" und "user_id". Diese sagen uns, wer den Tweet verfasst hat, wobei die user_id einzigartig ist und jeden Nutzer damit genau identifiziert, während der screen_name vom Nutzer verändert werden kann und mehr als einmal verwendet werden kann ("not uniquely identifying"). Ebenso interessiert und natürlich der "text" (der Tweet text, also der eigentliche Inhalt des Tweets/Statuses), der "favourite_count" (wie oft wurde der Tweet "geliked"), "retweet_count" (wie oft wurde der Tweet geretweetet), "reply_count" (wie h?ufig wurde auf diesen tweet geantwortet) und "hashtags" (eine Liste der hashtags welche in dem Tweet verwendet wurden). Ebenfalls interessant ist die Variable "source", welche uns sagt, mit welcher Applikation der Tweet versendet wurde, also bspw. Twitter for iPhone oder Twitter for Android. Selbst dieser Datenpunkt kann schon interessant sein: Bspw. lie? sich allein anhand dieser Variable feststellen, ob ein Tweet von Donald Trump tats?chlich von ihm stammte (mit privatem Android Handy gepostet) oder von einem Mitarbeiter (Twitter for iPhone). Auch im Marketing-Kontext hat diese Variable interessante Implikationen, da der gebrauch verschiedener Ger?te mit vielen demographischen Aspekten (wie bspw. Einkommen) korreliert. Außerdem können anhand dieser Variable Bots identifiziert werden, bzw. zumindest diese, die offiziell als Bots gekennzeichnet wurden (dazu später mehr).
+
+### Grundlegende Funktionen des rtweet Pakets
+
+rtweet beinhaltet verschiedene Funktionen um Tweets zu suchen, je nachdem was man haben m?chte oder was man schon hat:
+
+#### get_timeline()
+
+Der bereits oben verwendete get_timeline() Befehl zieht eine gewählte Anzahl Tweets (maximal 3200, default 100) zu einem gegenemem Nutzernamen oder ID bzw. mehrerer dieser in Form eines Vektors. 
+
+```{r}
+timelines <- get_timeline(c("elonmusk", "BillGates", "realDonaldTrump"), n = 200)
+```
+
+Für unser Anwendungsgebiet könnte uns bspw. interessieren, worüber Nutzer, die über ein bestimmtes Produkt oder eine bestimmte Marke getweeted haben, sonst noch so tweeten. In diesem Fall würden wir aus unseren anderweitig gesammelten Tweets die Nutzer ids entnehmen und für jeden dieser Nutzer in einem weiteren Request die letzten 3200 tweets ziehen. Die Anzahl von 3200 ist dabei leider ein hartes Limit.
+
+
+#### search_tweets()
+
+Diese Funktion ist unser Brot und Butter, denn mit ihr lassen sich Tweets mit Schlagwoertern suchen, allerdings leider nur solche, die nicht älter als 7 Tage sind. Das erste Argument ist dabei `q`, für "query". Dieser ist immer ein String, der bis zu 500 Zeichen lang sein kann. Leerzeichen werden dabei als "UND" interpretiert, d.h. es werden Tweets wiedergegeben, die alle Wörter **irgendwo** enthalten. Wenn ich nur nach zusammenhängenden Wortkonstellationen suchen möchte, muss ich doppelte Anführungszeichen verwenden! Als zus?tzliche Argumente der Funktion lassen sich bspw. eine maximale Anzahl wiedergegebener tweets (n), eine geographische Einschr?nkung auf einen bestimmten Bereich(geocode) und ob retweets gesucht werden sollen (include_rts) angeben. Ich kann bis zu 18,000 tweets je 15-Minuten Fenster sammeln. Wenn ich das argument `retyonratelimit = TRUE` setze, wird automatisch ein timeout gesetzt wenn dieses Limit überschritten wurde.
+
+```{r}
+tweets <- search_tweets("macbook pro", include_rts = FALSE, n = 3000, lang = "en")
+```
+
+
+#### lookup_tweets()
+
+Wenn man bereits Tweet-IDs hat, lassen sich hiermit weitere Informationen zu den Tweets ziehen. Twitter spricht hier von "rehydrating"
+```{r}
+lookup_tweets(tweets[1:10]$status_id)
+```
+
+
+#### get_retweets()
+
+Gegeben einer Status-ID lassen sich hiermit die 100 letzten retweets ziehen.
+```{r}
+retweeted <- tweets %>% filter(retweet_count > 0)
+get_retweets(retweeted$status_id[1])
+
+```
+
+#### get_followers()
+
+Hiermit lassen sich Follower eines gegebenen Accounts finden (ihr erhaltet nur die user_id, wenn ihr mehr Informationen wollt müsst ihr diese nachschlagen über lookup_user()):
+
+```{r}
+followers <- get_followers("janboehm", n = 5000)
+```
+
+
+Nicht zu verwechseln mit:
+
+#### get_friends()
+
+Hiermit lassen sich die Accounts finden, denen ein gegebener Account folgt (ihr erhaltet wieder nur die user_ids):
+
+```{r}
+follows <- get_friends("elonmusk")
+```
+
+
+#### andere Funktionen
+
+- Trends: get_trends()
+- Nutzer suchen (nach Beschreibung): search_users()
+- Favorites("likes") eine bestimmten Nutzers suchen: get_favorites()
+
+#### weitere Hilfsfunktionen
+
+Das rtweet Paket hat noch eine Menge anderer Funktionen, die den Umgang mit Twitter-Daten erleichtern. Die ts_plot() Funktion erlaubt es uns bspw. uns eine Timeline der Anzahl der Tweets angeben zu lassen. Die Funktion benutzt ggplot2 im Hintergrund und wir können ihn dementsprechend beliebig erweitern
+
+```{r}
+#aus der rtweet Vignette, leicht abgeändert:
+timelines %>%
+  filter(created_at > "2019-01-01") %>%
+  group_by(screen_name) %>%
+  ts_plot("days", trim = 1L) +
+  geom_point() +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Number of Twitter statuses by Elon Musk, Bill Gates and Donald Trump",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+  )
+```
+
+Etwas fortgeschrittener lassen sich auch Netzwerkgraphen aus rtweet-Objekten erstellen, welche dann mit anderen Paketen wie bspw. igraph geplottet werden können:
+```{r}
+
+graph <- network_graph(sample_n(tweets,200), .e = "mention")
+
+igraph::plot.igraph(graph, method = "fruchtermann")
+
+```
+
+Netzwerkgraphen sind ein Thema für sich und die Erstellung aussagekräftiger, gutaussehender Graphen ist eine Kunst für sich. Bei Bedarf werden wir uns später noch einmal genauer mit Netzwerkgraphen auseinandersetzen.
+
+
+
+### Die Streaming API
+
+Bisher haben wir die "statische" API von Twitter betrachtet. Es gibt noch eine komplett andere API, die man dazu verwenden kann, Tweets live zu empfangen. Es wird jedoch nur ein Bruchteil der tatsächlich getätigten Tweets betrachtet (soweit ich weiß im 1% Bereich). Für breiteren Zugang muss man mit Twitter in Geschäftsbeziehung stehen. Das geht bis zur sogenannten Firehose, bei der man dann 100% der Tweets erhalten kann. Firmen mit Firehose Zugriff lassen sich an einer Hand abzählen, da der Zugang nicht nur einen mindestens sechsstelligen Betrag im Monat kostet, sondern auch Rechenzentrum in der Größenordnung von Twitter selbst erordert. Die US Library of Congress hatte mal Firehose Zugang und die großen Geheimdienste vermutlich auch.
+
+Wir gengen uns erstmal damit, 1% der Tweets für 10 Sekunden zu streamen:
+
+```{r}
+coca_cola <- stream_tweets("coke,coca cola,#coke", timeout = 10)
+#funktioniert Analog zu search_tweets() und erlaubt auch mehrere Keywords, allerdings nicht als Vector sondern Komma-separiert!
+
+```
+
+Bei beliebten Themen und langen Zeiträumen müsst ihr unbedingt im Auge behalten, wie groß die Dateien werden!
+
+## Speichern von Twitter Daten
+
+Da wir nur an Tweets rankommen, die entweder grade verfasst werden (streaming API) oder maximal eine Woche alt sind (normale API), reicht es in der Regel nicht nur an einem einzigen Zeitpunkt tweets zu sammeln. Oft interessiert uns grade die Entwicklung über die Zeit und ob Saisonalität vorliegt und welche. Wenn wir über einen längeren Zeitraum sammeln wollen, haben wir grob drei Möglichkeiten dies zu tun
+
+***
+
+#### Tired: In Regelmäßigen Abständen manuell sammeln
+
+Die einfachste Möglichkeit ist, ihr schreibt euch den nötigen Code zusammen und führt diesen jeden Tag o.ä. manuell aus. Das ist ok so und ist für kurze Zeiträume noch zumutbar.
+
+#### Etwas weniger Tired: Script schreiben 
+
+Ihr schreibt ein Script zusammen, das ohne euer zutun durchlaufen kann. Dies führt ihr dann in regelmäßigen Abständen manuell aus (indem ihr R öffnet oder über die Commandline).
+
+#### Wired: Ihr automatisiert die Ausführung
+
+Wenn ihr ein Script habt, könnt ihr das auch einfach automatisch durchlaufen lassen. Mit den richtigen RStudio addins ("taskscheduleR" für Windows Nutzer, "CronR" für Mac und Linux) habt ihr sogar eine graphische Oberfläche, um eure Tasks zu managen.
+
+Variante zwei ist aber vollkommen in Ordnung und auf die arbeiten wir hin.
+
+***
+
+Wenn wir mehr als ein Suchwort benutzen wollen (was in der Regel sinnvoll ist), müssen wir entweder für jedes Schlagwort eine eigene Suchanfrage "hart" reincoden, oder aber wir arbeiten mit einem sogenannten `loop`. Ein einfachea Script zum Sammeln von Tweets, das einen loop verwendet könnte zum Beispiel schon so aussehen (im Zweifelsfall einfach copypasten und anpassen):
+
+
+```{r, eval=FALSE}
+
+library(rtweets)
+
+
+keywords <- c("Disney Plus", "DisneyPlus", "Apple TV", "Apple TV Plus", "HBO Max")
+
+tweets <- search_tweets(keywords[1], n = 100)
+
+for (i in 2:seq_along(keywords)) {
+  
+  tweets2 <- search_tweets(keywords[1], n = 100)
+  tweets <- dplyr::bind_rows(tweets2)
+  
+}
+
+write_csv(tweets, paste("tweets_", Sys.Date(), ".csv", sep=""))
+
+```
+
+Das Script könnt ihr so abspeichern und durchlaufen lassen, die Tweet-Daten werden dann in euer standard R Arbeitsverzeichnis abgespeichert. Alternativ könnt ihr auch den in write_csv() angegebenen Pfad anpassen!
+
+Bedenkt beim Sammeln bitte auch immer, wie groß die Datenmenge wird, mit der ihr letztendlich hantiert. Die 3000 Tweets die wir oben gezogen haben wiegen ca. 8,5mb. Rechnet grob überschlagen mit einem Gigabyte pro million Tweets, wenn ihr nur die wichtigsten Variablen speichert. Um mit den Daten später arbeiten zu können, empfiehlt es sich im Idealfall 5x so viel RAM zu haben, wie die Daten mit denen gearbeitet wird einnehmen.  
+```{r}
+#die Grö0e eines Objektes könnt ihr mit dem Befehl object.size() erfahren
+format(object.size(tweets),units="MB")
+
+```
+
+
+
+## Arbeiten mit Twitter Daten
+
+Wenn wir die Daten ersteinmal haben, wollen wir natürlich mit ihnen weiterarbeiten. Hier sind einige Ansätze dafür:
+
+### List-Columns
+
+Wie ihr vielleicht gesehen habt enthalten einige Spalten nicht einzelne Werte, sondern Listen. Diese Spalten nennt man auch List-Columns und die Arbeit mit Ihnen ist etwas anders. Die für uns sehr interessante Spalte "hashtags" ist so eine List-Column. Für jeden Tweets sind alle benutzten Hashtags in Form einer Liste angeordnet. Wenn wir mit den Hashtags arbeiten wollen, können wir beispielsweise die Listen "auspacken". Die geht mit den `unnest()` Funktionen:
+
+```{r}
+#wir können die Listen so entpacken, dass der Datensatz "länger" wird:
+tidy_tweets <- tweets %>% unnest(cols=c(hashtags))
+
+#wir könnten das selbe auch in die Breite machen, in diesem Fall erhalten wir für jeden einzigartigen Hashtag im Datensatz eine eigene Spalte!
+#unnested_wide <- tweets[1:10,] %>% select(status_id:hashtags) %>% unnest_wider(col = hashtags)
+#bei Hashtags absolut nicht zu empfehlen, da ihr unter umständen tausende Spalten bekommt!
+
+
+```
+
+
+Nachdem wir die Hashtags "flachgebügelt" haben, können wir sie mit Hilfe von den bekannten dplyr-Funktionen auswerten. Beispielsweise könnte uns interessieren, welche Hashtags am Häufigsten anzutreffen sind:
+
+```{r}
+
+
+tidy_tweets %>% group_by(hashtags) %>% count(sort=T)
+
+```
+
+
+Ebenso könnten wir uns für die Nutzer interessieren (bei größeren Datensätzen die über längere Zeiträume gesammelt wurden ist dies natürlich sinnvoller):
+
+```{r}
+top_posters <- tidy_tweets %>% group_by(screen_name) %>% count(sort=T)
+
+top_posters %>% left_join(unique(select(tidy_tweets, screen_name, source, country)))
+
+
+```
+
+
+Oder von welchem Endgerät (bzw. welcher Applikation) aus der Tweet abgesetzt wurde:
+
+```{r}
+tidy_tweets %>% group_by(source) %>% count(sort=T)
+```
+
+
+
+
+
+
+
+
+
+
+

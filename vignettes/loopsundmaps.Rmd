@@ -1,0 +1,246 @@
+---
+title: 'Fortgeschrittenes R: Loops und Maps'
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fortgeschrittenes R: Loops und Maps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(tidyverse)
+packages <- installed.packages()
+DSOS_installed <- "DSOS" %in% packages[,"Package"]
+```
+
+```{r, eval = DSOS_installed, include = FALSE}
+library(DSOS)
+data(tiktok_celebs)
+```
+
+```{r, eval = !DSOS_installed, include = FALSE}
+load("./data/tiktok_celebs.rda")
+```
+
+
+## Arbeitsabläufe automatisieren mit loops und maps
+
+Wenn wir mit R arbeiten kommt es häufig vor, dass wir den selben Arbeitsschritt in leicht abgewandelter Form immer wieder durchführen müssen. Dabei könnten wir den selben Code immer wieder Kopieren, leicht abändern und nacheinander ausführen. Im folgenden Beispiel betrachten wie wieder den Tiktok Datensatz und möchten uns für die Promis Jack Black, Miley Cyrus, Post Malone und The Rock die aktuellen Followerzahlen ausgeben lassen:
+
+```{r}
+jack_black_followers <- tiktok_celebs %>% filter(author_nickname == "Jack Black") %>% select(authorStats_followerCount) %>% unique()
+
+print(paste("Jack Black", "hat", jack_black_followers$authorStats_followerCount, "follower auf Tiktok."))
+
+miley_cyrus_followers <- tiktok_celebs %>% filter(author_nickname == "Miley Cyrus") %>% select(authorStats_followerCount) %>% unique()
+
+print(paste("Miley Cyrus", "hat", miley_cyrus_followers$authorStats_followerCount, "follower auf Tiktok."))
+
+post_malone_followers <- tiktok_celebs %>% filter(author_nickname == "Post Malone") %>% select(authorStats_followerCount) %>% unique()
+
+print(paste("Post Malone", "hat", post_malone_followers$authorStats_followerCount, "follower auf Tiktok."))
+
+the_rock_followers <- tiktok_celebs %>% filter(author_nickname == "The Rock") %>% select(authorStats_followerCount) %>% unique()
+
+print(paste("The Rock", "hat", the_rock_followers$authorStats_followerCount, "follower auf Tiktok."))
+
+
+```
+
+Das ganze ist...
+  1. sehr Arbeitsaufwendig (stellt euch vor wir wollten das jetzt nicht nur fuer vier Promis machen sondern fuer hunderte)
+  2. sehr unübersichtlich
+  3. Fehleranfällig: Ich muss jedes mal drei Stellen im gecopy-pasteten Code abändern, sobald ich eine Vergesse habe ich eine falsche Zuordnung
+  
+Generell gilt bei der Programmierung deshalb das **DRY** Prinzip: **Don't Repeat Yourself**. Eine Möglichkeit, mit der wir die Repitiion umgehen können, sind sogenannte `for loops`. Diese sehen so aus:
+
+
+
+```{r}
+
+promis <- c("Jack Black", "Miley Cyrus", "Post Malone", "The Rock")
+
+for (promi in promis) {
+  
+  followers <- tiktok_celebs %>% filter(author_nickname == promi) %>% select(authorStats_followerCount) %>% unique()
+
+  print(paste(promi, "hat", followers$authorStats_followerCount, "follower auf Tiktok."))
+}
+
+
+```
+
+Hierbei gehen wir etwas anders vor als vorher. Wir erzeugen zunächst einmal einen Vektor mit den Namen der Prominenten die wir betrachten möchten. Diese verwenden wir im `for loop` als Sequenz, durch die "durchiteriert" wird. Das heißt nichts anderes, als dass R die Sequenz durchgeht und den Code, der in den geschwungenen Klammern folgt, jeweils mit dem aktuellen Element durchführt. Dazu definieren wir zunächst einen Laufindex. Diesen können wir beliebig benennen, aber üblich sind Indizes wie i, k, j, m usw. (analog zur Mathematik). In diesem Fall habe ich ihn zum einfacheren Verständnis als "promi" benannt. Dabei muss man allerdings aufpassen: Es gibt einen Unterschied, ob der Index direkt einen Wert einnimmt (was in diesem Fall der Fall war) oder nur eine Zahl, welche die relative Position innerhalb des Vektors ausdrückt. Letzteres ist häufiger der Fall, als ersteres. Wir hätten den selben Vorgang auch so ausdrücken können:
+
+```{r}
+#mit seq_along bekommen wir eine Zahlenfolge entlang des Vektors, Also fuer einen Vektor mit vier Elementen, die Sequenz 1 bis 4:
+seq_along(promis)
+
+#der Index (i benannt) nimmt jetzt die Werte 1 bis 4 an, welche wir dann im Print Befehl als Index über den Vektor "promis" laufen lassen:
+for (i in seq_along(promis)) {
+  print(promis[i]) #"Drucke Element i des Vektors "promis"
+}
+
+#Zum Vergleich wie oben:
+for (promi in promis) {
+  print(promi) #"Drucke den Laufindex "promi", welcher ein Element des Vektors "promis" ist.
+}
+```
+
+Wenn wir einmal verstanden haben, wie ein loop funktioniert, können wir uns schon viel Arbeit ersparen. Bspw. ist es jetzt trivial, den selben Vorgang fuer alle Accounts in dem Datensatz durchzuführen:
+
+
+```{r}
+promis <- tiktok_celebs$author_nickname %>% unique()
+
+
+for (i in seq_along(promis)) {
+  
+  followers <- tiktok_celebs %>% filter(author_nickname == promis[i]) %>% select(authorStats_followerCount) %>% unique()
+
+  print(paste(promis[i], "hat", followers$authorStats_followerCount, "follower auf Tiktok."))
+}
+
+
+```
+
+### Den selben loop mehrfach: baut eine Funktion
+
+Was, wenn wir nicht nur eine Liste mit Accounts haben, sondern mehrere? Dann könnten wir wieder den Loop-Code nehmen, copy-pasten und anpassen. Wenn wir aber wissen, dass wir den selben Schritt noch häufiger durchführen werden, kann es einfacher und übersichtlicher sein uns eine generelle Funktion für den Vorgang zu basteln:
+
+```{r}
+#Funktion definieren:
+print_followers <- function(promis) {
+  
+    for (promi in promis) {
+    
+    followers <- tiktok_celebs %>% filter(author_nickname == promi) %>% select(authorStats_followerCount) %>% unique()
+  
+    print(paste(promi, "hat", followers$authorStats_followerCount, "follower auf Tiktok."))
+  }
+}
+
+#Funktion aufrufen (in diesem Fall mit den ersten 10 Promis):
+print_followers(promis[1:10])
+
+#dann nochmal mit den zweiten 10 Promis:
+print_followers(promis[20:30])
+```
+
+
+
+## Fortgeschrittener: if und while Konditionen
+
+Noch etwas fortgeschrittener können wir noch weitere Logik in unseren Loop bzw. unsere Funktion einfließen lassen. Die wichtigsten sogenannten **conditionals** sind dabei `if` (oft on Kombination mit `else`) und `while`. 
+
+### if, else und else if
+
+Mit `if` und `else` lassen sich "wenn -> dann" Schritte abbilden. Ein **if-statement** nimmt dabei immer den Wert `TRUE` oder `FALSE` an (enthält also eine logische Prüfung), in Klammern folgt dann der Code, der im Falle eines `TRUE` ausgeführt werden soll:
+
+```{r}
+if (2>1) {
+  print("Zwei ist größer als eins")
+}
+```
+In der Regel geben wir dem **if-statement** eine vorher definierte Variable:
+
+```{r}
+#Variable erzeugen, über die wir den Output steuern können:
+fusionsreaktor_erfunden <- FALSE
+
+if (fusionsreaktor_erfunden) {
+  print("Die Menschheit hat eine Chance")
+}
+
+if (!fusionsreaktor_erfunden) {
+  print("Die Menschheit hat keine Chance")
+}
+#Was wird gedruckt? Spielt mit der "fusionsreaktor_erfunden" Variable rum.
+```
+
+Was wir oben gebaut haben, ist nichts anderes als eine "wenn-dann-sonst" Kondition. Diese sind so häufig anzutreffen, dass es einen speziellen Conditional namens `else` gibt, mit dem wir das Gegenereignis simpler darstellen können:
+
+```{r}
+fusionsreaktor_erfunden <- FALSE
+
+if (fusionsreaktor_erfunden) {
+  print("Die Menschheit hat eine Chance")
+} else {
+  print("Die Menschheit hat keine Chance")
+}
+```
+
+Eine besondere Abwandlung des `else` statements ist das `else if` statement, welches wiederum eine if-Prüfung durchführt:
+
+```{r}
+fusionsreaktor_erfunden <- FALSE
+mars_kolonisiert <- TRUE
+
+if (fusionsreaktor_erfunden) {
+  print("Die Menschheit hat eine Chance")
+} else if (mars_kolonisiert) {
+    print("Zumindest die Reichen werden überleben")
+} else {
+    print("Die Menschheit hat keine Chance")
+}
+```
+
+### Der while loop
+
+R hat noch eine weitere Art von Loop im Petto: Den `while`-loop. Diese läuft immer so lange durch, solange die zu Beginn definierte KOndition erfüllt ist. Hierbei muss man aufpassen, da es sehr einfach ist eine Kondition zu hinterlegen, welche immer TRUE ist (dadurch erzeugt man einen **infinite loop* und das Programm läuft ewig weiter). Dabei erzeugt man in der Regel eine Index-Variable, welche mit jedem Schritt inkrementiert wird:
+
+```{r}
+i = 1 #Startwert
+
+while (i <= 10) {
+  print(i)
+  i = i+1 #Index um 1 inkrementieren
+}
+#Was passiert wenn ihr die Zeile nach Print() weglasst?
+```
+Der 'while` loop kombiniert also einen for-loop mit einem if-statement. While-loops sind vor Allem fuer komplexere Programme relevant und Ihr werdet vermutlich keine brauchen, aber es ist sinnvoll diese mal gesehen zu haben.
+
+
+## Alternativen zu loops: Apply und Map Funktionen
+
+Eine staerke von R lag schon immer darin, ein einfaches interface zur Durchführung des selben Vorgangs auf unterschiedliche Elemente eines Datensatzes zu bieten. Dies liegt darin begründet, dass R fuer statisische Auswertungen entwickelt wurde und solche Operationen dort sehr häufig anzutreffen sind (bspw. wenn wir fuer verschiedene Gruppen den Mittelwert berechnen wollen oder fuer verschiedene Laender in einem oekonometrischen Datensatz Schätzungen durchfuehren wollen). Standardmaeßig in R enthalten sind deshalb die sogenannten `apply` Funktionen. Diese nehmen jeweils ein Objekt als Argument (bspw. eine Liste oder eine Matrix), je nach Typ des Objekts einen Index, der besagt ob durch Zeilen oder Spalten geloopt werden soll, sowie eine Funktion, welche auf Elemente dieses Objekts angewendet werden soll:
+
+```{r}
+#Als einfaches Beispiel wieder unsere Ländertabelle:
+table1
+apply(table1[,2:4], 1, mean)
+apply(table1[,2:4], 2, mean)
+
+```
+
+Es gibt dabei verschiedene apply Funktionen, welche jeweils danach benannt sind welche Form das Output-Objekt hat (lapply fuer listen, mapply fuer Matrizen, sapply fuer Vektoren...). Diese sind leider nicht untereinander konsistent und gerade fuer Neueinsteiger teilweise verwirrend (ich habe auch immer noch Probleme mit Ihnen). Eine Alternative zu den apply Funktionen stellen die `map` Funktionen aus dem Paket `purrr` (Teil des tidyverses). Diese sind Wrapper um die apply Funktionen mit einheitlichem Interface, Pipe-Freundlichkeit und einigen anderen Vorteilen welche damit zu tun haben wie R Argumente einer Funktion interpretiert (besprechen wir hier nicht). 
+
+```{r}
+map(table1, mean) #direkt erster Vorteil: wir können die Variable country mit reinnehmen ohne dass alles kaputt geht
+#genau wie bei apply können wir festlegen, dass wir als Endprodukt einen Dataframe haben wollen:
+map_df(table1, mean)
+
+```
+
+Praktisch wird das ganze, wenn wir die Pipe benutzen:
+
+```{r}
+mpg %>%
+  split(.$class) %>% #split() teil den Dataframe in mehrere auf anhand der Variable die als Argument gegeben wird
+  map(~ lm(cty ~ displ, data = .x)) %>% #berechnet fuer jede Auspraegung der Variable ein Modell
+  map(summary) %>% #wendet den Summary Befehl auf jedes Modell an
+  map_df("r.squared")#gibt die r squared fuer jedes Modell raus, dbl steht fuer den Datentyp "double", also ungerade Zahl (nicht unbedingt notwendig)
+
+
+```
+
+### Wozu koennen wir Maps gebrauchen?
+
+Ihr werdet groeßtenteils ohne die Verwendung von loops und maps auskommen. Ein Gebiet, bei dem sie fuer uns sehr praktisch sind, ist das einlesen vieler einzelner Dateien. Wenn wir zum beispiel taeglich (oder sogar stuendlich) tweets sammeln und diese jeweils abspeichern (dazu spaeter mehr), haben wir am Ende vielleicht mehrere hundert Dateien. Diese koennen wir aber trotzdem problemlos und schnell ohne viel Arbeit einlesen mit Hilfe der map_df Funktion:
+
+```{r, eval=FALSE}
+#alle Dateien aus einem Ordner einlesen mit einer Zeile:
+data <- list.files("PFAD", full.names = T) %>% map_df(read_rds) %>% bind_rows()
+```
+
+Dazu spaeter mehr!
