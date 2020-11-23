@@ -1,0 +1,249 @@
+---
+title: "Sammeln von Reddit Daten"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Sammeln von Reddit Daten}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(tidyverse)
+library(jsonlite)
+```
+
+## Reddit als Datenquelle
+
+Wir haben bisher nur gelernt wie man Daten von einer einzigen Plattform beziehen kann: Twitter. Weiterhin hatten wir Beispieldatensätze von Tiktik und Twitch, welche ich ebenfalls vorher gesammelt hatte. Prinzipiell gilt, dass sich die Methoden, die wir zum Sammeln von Twitter Daten gelernt haben, auch auf andere Plattformen übertragen lassen. So haben diese in der Regel ebenfalls eine API, deren Endpoints zwar anders heißen und ein anderes query-Schema haben, aber grundsätzlich ähnlich funktionieren. Häufig gibt es auch schon Pendants zum rtweet-Paket, welche uns für verschiedene Plattformen Wrapper-Funktionen bereitstellen (bspw. `tuber` für YouTube). Eine Plattform, welche aus meiner Sicht besonders einfach zu benutzen ist, ist Reddit. Reddit ist ein sogenannter "social news aggregator", dabei können Nutzer andere Webinhalte verlinken (und auch eigene Posts erstellen) und andere Nutzer können diese up und downvoten, teilen und kommentieren. Reddit wurde 2005 von Steve Huffman, Alexis Ohanian und Aaron Swartz[^der hat übrigens, gemeinsam mit dem bekannten Apple-Blogger John Gruber, die **markdown** Sprache entwickelt die wir hier grade verwenden] gegründet und hat mit zur Zeit ca. 3 Milliarden Dollar einen relativ geringen Markwert, trotz der vergleichsweise hohen Nutzerzahlen ([Platz 7 im Alexa-Ranking für die USA, 17 weltweit](https://en.m.wikipedia.org/wiki/Reddit)).
+
+Reddit hat aus Forschersicht einige Vorteile gegenüber Twitter:
+  - Datensammlung ist einfacher
+    - statisch, heißt ich kann auch noch auf Posts zurückgreifen und über die Suche finden die Jahre alt sind
+    - heißt bei der Sammlung: ich kann erst nur Posts sammeln, später dann Kommentare nur zu relevanten posts
+    - keine authentifizierung erforderlich[^zumindest bei reinen Lesevorgängen], ich kann jede Reddit-URL als JSON anfordern!
+    - für fortgeschrittenere Nutzung gibt es einen guten API-Wrapper (**PRAW**, leider nur für Python)
+  - die Daten an sich sind "schöner":
+    - längere Texte als 280 Zeichen
+    - score eines Posts gibt Auskunft über generelle Zustimmung!
+    - Reddit ist aufgeteilt in **subreddits** mit bestimmten Themen (heißt ich kann die Suche einfacher einschränken)
+
+Trotz aller Vorteile gibt es noch vergleichsweise wenig Literatur über Reddit oder mit Daten von Reddit (Tendent aber steigend) und meines Wissens nur ein einziges Paper aus dem Management und Marketing Bereich ([mein eigenes](http://proceedings.emac-online.org/pdfs/A2020-60911.pdf)). Ich breche jetzt trotzdem mal eine Lanze für Reddit und zeig euch was man mit Reddit Daten so machen kann.
+
+## Sammlung von Reddit Daten
+
+```{r, eval = TRUE}
+#ich kann mir einfach die generelle Frontpage von Reddit als JSON ausgeben lassen indem ich ".json" an die URL hefte (/ nicht vergessen!)
+page <- fromJSON("http://reddit.com/.json")
+as_tibble(page$data$children$data)
+```
+
+Ich persönlich habe bisher um Speicherplatz zu sparen nur einige relevante Variablen abgespeichert:
+
+```{r, eval = TRUE}
+#das sähe dann so aus, die "pull_reddit" Funktion aus dem DSOS Paket macht das selbe:
+fp_data <- tibble(
+    title = page$data$children$data$title,
+    score = page$data$children$data$score,
+    num_comments = page$data$children$data$num_comments,
+    pulled = Sys.time(),
+    url = page$data$children$data$url,
+    permalink = page$data$children$data$permalink,
+    created_utc = page$data$children$data$created_utc
+  ) %>%
+  mutate(created_utc = lubridate::as_datetime(pulled))
+
+fp_data #sieht doch schon viel übersichtlicher aus
+```
+
+```{r, eval = TRUE}
+pull_reddit <- function(subreddit = "") {
+  page = fromJSON(paste("http://reddit.com/",subreddit,".json", sep=""))
+  
+  data = tibble(
+    title = page$data$children$data$title,
+    score = page$data$children$data$score,
+    num_comments = page$data$children$data$num_comments,
+    source = subreddit,
+    pulled = Sys.time(),
+    subreddit = page$data$children$data$subreddit,
+    url = page$data$children$data$url,
+    permalink = page$data$children$data$permalink,
+    created_utc = page$data$children$data$created_utc
+  ) %>%
+    mutate_at(4, funs(replace(., is.na(.), "frontpage"))) %>% 
+    mutate(created_utc = lubridate::as_datetime(pulled))
+  
+  return(data)
+}
+```
+
+
+Die für uns erstmal interessantesten Variablen sind:
+  - title: der Titel des Posts
+  - score:: der Score des Posts (upvotes-downvotes/alter)
+  - num_comments: Anzahl der Kommentare
+  - url: verlinkte URL des posts (kann auch ein Link auf Reddit("crosspost") sein)
+  - permalink: so nennt Reddit die unique IDs der posts bzw. comments
+  - created_utc: Timestamp der sagt, wann ein Post veröffentlicht wurde (UTC Zeitzone)
+
+
+
+Wenn ich jetzt noch zusätzlich zu den Posts die Kommentare haben möchte, kann ich diese in einem weiteren Schritt ebenfalls ziehen indem ich den `permalink` eines reddit posts in die URL einfüge:
+
+```{r, eval = TRUE}
+comments <- fromJSON(paste("http://reddit.com",fp_data$permalink[1],".json", sep=""))
+  
+as_tibble(comments$data$children[[2]]$data)
+
+```
+Oder auch etwas komfortabler mit folgender Hilfsfunktion:
+
+```{r}
+
+pull_top_level_comments <- function(reddit_links) {
+  
+  progress <- txtProgressBar(min = 0, max = length(reddit_links), style = 3)
+  
+  variables <- c(
+    "created_utc",
+    "permalink",
+    "body",
+    "score",
+    "downs",
+    "author",
+    "is_submitter",
+    "gilded",
+    "stickied"
+  )
+  
+  content <- fromJSON(paste("http://reddit.com",reddit_links[1],".json", sep=""))
+  
+  reddit_comment_data <- as_data_frame(select(content$data$children[[2]]$data,variables)) %>%
+    filter(!is.na(body)) %>% mutate(datetime = as_datetime(created_utc)) %>%
+    mutate(date = date(datetime)) %>% mutate(permalink_comment = permalink) %>%
+    mutate(permalink = reddit_links[i])
+  
+  
+  for (i in 2:length(reddit_links)) {
+    
+    tryCatch({
+      content <- fromJSON(paste("http://reddit.com",reddit_links[i],".json", sep=""))
+    }, error=function(e){cat("ERROR :",conditionMessage(e), "failed on", i)})
+    if (!is.null(content$data$children[[2]]$data)) {
+      
+      data <- as_data_frame(select(content$data$children[[2]]$data,variables)) %>%
+        filter(!is.na(body)) %>% mutate(datetime = as_datetime(created_utc)) %>%
+        mutate(date = date(datetime)) %>% mutate(permalink_comment = permalink) %>%
+        mutate(permalink = reddit_links[i])
+      
+      reddit_comment_data <- rbind(reddit_comment_data, data)
+    } else{next}
+    
+    
+    setTxtProgressBar(progress, i)
+    print(sprintf("Finished post %d of %d",i, length(reddit_links)))
+    
+  }
+  
+  return(reddit_comment_data)
+  
+}
+```
+
+
+## Auswertung von Reddit Daten
+
+Im weiteren werden wir einen von mir in 2018 und 2019 gesammelten Datensatz behandeln. Dieser umfasst stündliche "Momentaufnahmen" des Subreddits **r/hailcorporate**. In diesem verlinken Nutzer andere Reddit posts, von denen sie glauben, dass sie **astroturfing** sind, also verstecktes Marketing das aussehen soll wie organischer UGC. Das fand ich als potentielles Marketingthema recht spannend, da Astroturfing ein noch relativ wenig erforschtes Thema ist welches ich persönlich dem Forschungsbereich der *consumer subversion* zurechnen würde (grob zusammenzufassen als Aktives Untergraben Marketingaktivitäten). Wir schauen uns das mal an: 
+
+```{r}
+#Daten einlesen:
+hc_posts <- read_csv("./data/hc_posts.csv")
+
+#für später:
+summarize_reddit_posts <- function(reddit_posts) {
+  reddit_posts %>% group_by(permalink) %>% summarise(
+    score = mean(score, na.rm = T),
+    num_comments = max(num_comments, na.rm = T),
+    title = title[1],
+    url = url[1],
+    created_utc = created_utc[1]
+  )
+}
+
+summarized_posts <- summarize_reddit_posts(hc_posts)
+
+
+
+hc_posts
+```
+Der Datensatz deckt einen Zeitraum von x bis x ab. In dieser Zeit wurden x einzelne Posts auf r/hailcorporate getätigt, mit insgesamt x Kommentaren. Der Subreddit ist damit als relativ klein, aber durchgehend aktiv einzuordnen. Das sehen wir auch, wenn wir uns die Anzahl der (neuen) Posts pro Tag anschauen:
+
+
+
+```{r}
+
+by_date <- summarized_posts %>% group_by(day = lubridate::date(created_utc)) %>% count()
+ggplot(by_date, aes(day, n))+
+  geom_line()+
+  ggtitle("Posts to r/hailcorporate by day")+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", lineheight = 1))
+
+```
+
+### Welche Kategorien werden besonders häufig "erwischt"?
+
+Spezifisch für den Subreddit, was ihn für mich zu einem Interessanten Beispiel gemacht hat, ist dass Posts einem bestimmten Muster folgen. So werden Marken, Produktnamen etc. prinzipiell nicht direkt verwendet (um nicht selber einen Werbeeffekt zu erzeugen), sondern durch generische Begriffe in eckigen Klammern ersetzt (wie bspw. "[brand]", "[product]", "[company]"). Dies hilft uns sehr, da wir dann mit Hilfe sogenannter *regular expression* uns genau die Inhalte dieser Klammern aussprucken lassen können!
+
+```{r}
+
+post_subjects <- summarized_posts %>% mutate(subject = tolower(str_extract(title, "\\[(.*?)\\]")),
+                subject_two = tolower(str_extract(str_replace(title, str_c("\\" ,subject), ""), "\\[(.*?)\\]"))) 
+post_subjects %>% group_by(subject) %>% count(sort = T)
+```
+Die tatsächlichen Namen der Produkte und Marken sehen wir aber häufig in der verlinkten URL (posts auf hailcorporate sind nämlich größtenteils crossposts auf andere reddit posts):
+```{r}
+post_subjects %>% filter(subject == "[brand]"| subject == "[brand name]", !str_detect(url, "HailCorporate"))
+```
+
+In diesem Fall haben wir erneut die Funktion `str_detect` verwendet, um Posts auszuschließen die direkt auf HailCorporate gepostet wurden. Anhand der URL können wir jetzt schon bei vielen Posts sehen, um welche Marken es geht. Das Problem: Wie können wir uns die Markennamen automatisiert ausgeben lassen? Wir könnten ein "Lexikon" mit Markennamen verwenden und schauen, ob ein gegebener Markenname in der URL enthalten ist (das ganze kann man entweder recht simpel per grep oder str_match machen, was dann aber sehr langsam und ineffizient ist, oder clever mit hash-Funktionen und/oder Wort-Vektoren, was allerdings relativ aufwendig ist). Wir begnügen uns erstmal damit, Stichpunktartig Markennamen rauszuschreiben (hat auch nur ca 5 Minuten gedauert):
+
+```{r}
+brands <- c("dove", "pepsi", "coke", "steamfresh", "ally_savings", "frixion", "corsair", "nova_scotia", "walmart", "amazon", "hunts", "dominos", "carrot_weather", "xbox", "lego", "disney", "DC", "7eleven", "faber_castell", "samsung", "monsanto", "snickers", "razer", "roomba", "tesla", "smartfood", "kwik", "petcam", "bandaid", "kraft", "dr_martens", "olive_garden")
+```
+
+Und können uns dann anschauen, welche Marken besonders häufig angeprangert werden:
+
+```{r}
+post_subjects %>% mutate(brand = str_match(url, paste(brands, collapse = "|")))
+```
+
+### Auf der Nutzerebene
+
+Als nächsten Schritt könnten wir jetzt schauen, wie viele Nutzer auf dem Subreddit aktiv sind und welche Nutzer denn besonders produktiv sind. Dazu könnten wir die `permalinks` der Posts verwenden, um alle Kommentare zu ziehen. Wie wir die Top-Level Kommentare bekommen, haben wir oben schon gesehen. Reddit-Kommentare sind allerdings in Threads genested, weshalb wir um wirklich alle ziehen zu können auf die offizielle Reddit-API zurückgreifen müssen, wozu wir leider python brauchen. Für die Interessierten, der Code sähe so aus:
+
+```{python, eval=FALSE}
+import praw
+
+
+ClientId = "EURE_ID"
+ClientSecret ="EUER_SECRET"
+userAgent = "EUER_APP_NAME"
+r = praw.Reddit(user_agent=userAgent, client_id=ClientId, client_secret=ClientSecret)
+
+def getAllComments(link):
+    submission = r.submission(url=link)
+
+    submission.comments.replace_more(limit=None)
+
+    #for comment in submission.comments.list():
+        #author = comment.author
+        #body = comment.body
+        #score = comment.score
+    return submission.comments.list()
+  
+getAllComments("permalink_einfuegen")
+
+```
+
+Ich habe das ganze schonmal gemacht, der resultierende File ist allerdings ca. 1gb groß. Weiter deshalb live...
