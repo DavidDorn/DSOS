@@ -18,7 +18,8 @@ Imports:
     rtweet,
     sentimentr,
     devtools,
-    nycflights13
+    nycflights13,
+    jsonlite
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)

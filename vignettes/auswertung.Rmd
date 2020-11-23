@@ -1,0 +1,345 @@
+---
+title: "Sammlung und Auswertung von Twitter-Daten"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Auswertung von Twitter Daten}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+library(tidyverse)
+library(rtweet)
+packages <- installed.packages()
+DSOS_installed <- "DSOS" %in% packages[,"Package"]
+
+```
+
+```{r, eval = DSOS_installed}
+library(DSOS)
+data(timelines)
+data(followers)
+data(followers_timelines)
+```
+
+```{r, eval = !DSOS_installed}
+read_rds("./data/streaming_services_timelines.Rds")
+read_rds("./data/streaming_services_followers5k.Rds")
+read_rds("./data/followers_timelines.Rds")
+```
+
+
+
+## Sammlung
+
+Bisher haben wir den Fokus auf die "Live"-Sammlung von Tweets über search_tweets() und stream_tweets() gelegt. Das hängt damit zusammen, dass dies bei einigen Fragestellungen leider notwendig ist, beispielsweise wenn uns das Tweet-Volumen oder Inhalte über die Zeit interessieren. Ihr müsst aber je nach Fragestellung gar nicht unbedingt live Sammeln, es kann beispielsweise auch reichen
+
+  - Offizielle Accounts von Firmen oder relevanten Personen zu identifizieren
+  - für diese Accounts die letzten 3200 (leider hartes Maximum) Tweets und sämtliche (solange nicht zu viele) follower ziehen
+  - für diese follower wiederum tweets und gefolgte Accounts ziehen
+  - bspw. untersuchen:
+    - wie die verschiedenen Marken kommunizieren
+    - ob sich die Follower kategorisieren lassen und ob sie sich zwischen den Marken unterscheiden
+    - inwiefern Überschneidungen bei den Followern bestehen ("Nutzer die Apple folgen folgen auch Samsung" etc.)
+    - wem Follower sonst noch so folgen und was sie schreiben etc.
+  - Das müsst ihr dann nur ein einziges mal machen und spart euch die langwierige Sammelei  
+    
+
+    
+Das ist schon nicht wenig Arbeit und kann eine Seminararbeit schnell füllen! Ihr dürft aber natürlich auch alles Mögliche andere machen, was euch einfällt und ich helfe euch dabei!
+
+Im Folgenden werde ich den oben beschriebenen Ablauf Schritt für Schritt durchgehen, an diesem könnt ihr euch dann entlang hangeln.
+
+## Betrachtung einer Branche: Streaming Dienste
+
+Beispielhaft werden wir jetzt einen spezifischen Markt betrachten, nämlich den der (Video)Streaming-Dienste. Das Beispiel stammt noch aus dem letzten Jahr, wo das Thema recht salient war, da es mehrere neue Markteintritte auf dem Gebiet gab. Zu den großen "incumbents" (Netflix, Amazon Prime, Hulu...) gesellten sich damals zwei große Neuzugänge: Disney Plus (betrieben vom Disney Konzern der gerade Fox geschluckt hat, denen wiederum Hulu gehört) und Apple TV Plus (dahinter steckt wie der Name sagt Apple). Anfang nächsten Jahres kommt noch HBO Max (dahinter steckt Warner) dazu. Ich würde jetzt weiter erläutern und  argumentieren, warum das Thema relevant ist, Kontext geben und mich dabei natürlich auf Quellen beruhen. Das ist schon nicht wenig Arbeit und benötigt oft mehr Text als man zunächst denkt.In unserem Fall könnte man jetzt bspw. argumentieren, dass die Nachfrage nach Streaming-Video durch die Corona-Krise gestiegen ist, weil alternative Unterhaltungsmöglichkeiten wegfallen. Jetzt könnte man zum beispiel untersuchen, inwiefern die offiziellen Twitter-Accounts der Anbieter auf diese Situation eingehen.
+
+### Identifikation relevanter Accounts
+
+Zunächst recherchieren wir manuell, welche Dienste existieren und ob diese Twitter accounts betreiben, bspw. über die Twitter suche (wir beschränken uns auf den US Markt):
+
+```{r, eval = TRUE}
+
+accounts <- list(
+  disney = c("disneyplus", "DisneyPlusHelp", "disneyplusnews"),
+  hbo = c("hbomax","HBOMaxPR","HBOmaxNews"), #noch ohne Ende andere
+  hulu = c("hulu","hulu_support"),
+  netflix = c("netflix", "NetflixFilm", "Netflixhelps"),
+  amazon = c("primevideo", "AmazonStudios"), #konnte keinen Support channel finden
+  apple = c("AppleTVPlus", "AppleTV") #dito
+  
+)
+
+```
+
+Wie ihr seht haben die Dienste in der Regel mindestens einen generellen Account und einen getrennten für Customer Support. Beide zu sammeln könnte für's erste interessant sein. Einige Dienste haben zusätzlich noch weitere Channels, wir können diese erstmal mit aufnehmen und hinterher entscheiden ob es sich lohnt diese getrennt zu betrachten. Es gibt natürlich noch jede Menge weitere Anbieter je nach Lokalität, aber wir beschränken uns auf die genannten und begründen dies irgendwie mit Marktanteil o.ä.
+
+
+### Sammlung der timelines
+
+Für diese Accounts sammeln wir dann alle verfügbaren Tweets:
+
+
+```{r, eval=FALSE}
+#die Liste die ich oben erstellt habe wandle ich in einen Dataframe um und benenne die Spaltennamen um, dies hilft mir später bei der Aggregation
+keywords <- stack(accounts) %>% rename(service = ind, account_name = values)
+
+#jetzt kann ich entweder einen Loop um über die keywords schreiben oder die get_timelines Funktion verwenden:
+
+timelines <- get_timelines(keywords$account_name, n = 3200)
+
+write_rds(timelines, "streaming_services_timelines.Rds")
+
+
+```
+
+### Erste explorative Auswertung
+
+
+Jetzt könnne wir bereits Anfangen mit der explorativen Auswertung. Bspw. können wir uns plotten, wie aktiv die jeweiligen Accounts sind:
+
+```{r}
+
+timelines %>%
+  filter(created_at > "2020-01-01") %>%
+  group_by(screen_name) %>%
+  ts_plot("days", trim = 1L) +
+  geom_point() +
+  theme_minimal()
+```
+
+
+Was ist ca. Ende August bei DisneyPlus passiert, dass uns den Plot so verzerrt?
+
+```{r}
+
+timelines %>% group_by(screen_name, lubridate::as_date(created_at)) %>% count(sort=T)
+
+timelines %>% filter(screen_name == "disneyplus", lubridate::as_date(created_at)=="2020-08-20")
+
+timelines %>% filter(screen_name == "hulu", lubridate::as_date(created_at)=="2020-09-30")
+```
+
+Anscheinend hat eine App namens "Fan Experience Platform" Tweets mit dem offiziellen Disneyplus Account verschickt, in welchem es um irgendwelche Giveaways ging. Einen ähnlichen Vorfall gab es mit dem Hulu Account, der eine Halloween-Aktion gestartet hat. In beiden Fällen wurden vor Allem Entschuldigungstweets an Teilnehmer verschickt, die zu spät waren.
+Wir filtern diese Tweets mal raus, damit der Plot besser aussieht:
+
+```{r}
+#ich erzeuge ein neues Objekt, damit wir uns den Filter-Kram in Zukunft sparen können:
+timelines_clean <- timelines %>%
+  filter(created_at > "2020-01-01", 
+         !(screen_name == "hulu" & lubridate::as_date(created_at)=="2020-09-30"),
+         !(screen_name == "disneyplus" & lubridate::as_date(created_at)=="2020-08-20"))
+timelines_clean %>%
+  group_by(screen_name) %>%
+  ts_plot("days", trim = 1L) +
+  geom_point() +
+  theme_minimal()
+```
+
+Auffällig wird direkt, dass fast alle Anbieter in den letzten zwei Monaten ihre tweet-Frequenz erhöht zu haben scheinen. Bevor wir vorschnelle Schlüsse ziehen müssen wir aber bedenken, dass nur die letzten 3200 Tweets gezogen werden! Die Help/Support accounts scheinen sehr viel zu posten, wahrscheinlich ist es also sinnvoll, zwei Typen von Accounts getrennt zu betrachten:
+
+```{r}
+timelines_clean %>%
+  filter(!grepl("help|support", screen_name, ignore.case = T)) %>%
+  group_by(screen_name) %>%
+  ts_plot("days", trim = 1L) +
+  geom_point() +
+  theme_minimal()
+```
+
+Jetzt sieht das schon ganz anders aus. Diesmal ist der Hulu Account der Ausreißer, der anfang Oktober wohl eine besondere Aktion gemacht haben (was könnt ihr selber rausfinden).
+Alternativ nur die Support-Accounts:
+```{r}
+timelines_clean %>%
+  filter(grepl("help|support", screen_name, ignore.case = T)) %>%
+  group_by(screen_name) %>%
+  ts_plot("days", trim = 1L) +
+  geom_point() +
+  theme_minimal()
+```
+
+Wir können uns auch anschauen, welche hashtags die verschiedenen Accounts am häufigsten verwenden:
+
+```{r}
+
+
+top_hashtags <- timelines %>% select(screen_name, hashtags) %>% separate_rows(hashtags, sep= ",") %>%
+  group_by(screen_name, hashtags) %>%
+  count(sort = T)
+
+top_hashtags %>% filter(str_length(hashtags) > 0)
+
+```
+
+Wir sehen sehr viel Selbstpromotion, produktspezifische Hashtags und Aktionshashtags.
+
+Wie kommen die Posts denn an?
+
+```{r}
+timelines %>% ggplot(aes(x = retweet_count, y = favorite_count))+
+  geom_point()+
+  geom_jitter()+
+  facet_wrap(~screen_name)
+
+#timelines %>% arrange(desc(favorite_count))
+```
+
+Netflix hat viel mehr Interaktionen als andere Anbieter (war auch im letzten Jahr schon so), wobei wir dabei natürlich immer die Anzahl der Follower im Hinterkopf behalten müssen:
+
+```{r}
+timelines %>% mutate(interaction_rate = ((retweet_count+favorite_count)/followers_count)) %>% ggplot(aes(x = log10(interaction_rate)))+
+  geom_histogram()+
+  facet_wrap(~screen_name)
+  
+```
+
+
+
+Auch das "Engerät" kann hier wieder interessant sein, wir schauen mal womit die verschiedenen Accounts so tweeten:
+
+```{r}
+timelines %>% group_by(screen_name, source) %>% count()
+  
+```
+
+Wir sehen dass viele Tweets von CMS-Systemen abgeschickt werden, aber auch viele von Mobilgeräten etc. Man könnte sich jetzt anschauen ob es bspw. einen Zusammenhang zwischen der Zeit des postings und des benutzten Gerätes gibt und bspw. darauf schließen wie die Arbeitszeiten der Zuständigen Angestellten sind (auch sowas ist häufig möglich).
+
+```{r}
+timelines %>% filter(!screen_name == "hulu") %>% group_by(screen_name, source, hour=lubridate::hour(created_at)) %>% count() %>% ggplot(aes(x = hour, y = n))+
+  geom_line(aes(color = source), show.legend = F)+
+  facet_wrap(~screen_name)
+```
+Ich seh hier leider auf dem ersten Blick nicht wirklich viel, außer Schwankungen im Tagesablauf. Hierbei muss man immer im Hinterkopf behalten, in welcher Zeitzone sich die Nutzer befinden!
+
+
+### Follower der accounts ziehen
+
+Als nächstes könnten wir uns die Follower der offiziellen Accounts ausgeben lassen. Dabei sollten wir bedenken, wie viele Follower die Accounts haben. Bei millionen von Followern kann es sehr lange dauern alle zu ziehen: 
+
+```{r}
+timelines %>% group_by(screen_name) %>% summarize(follower_count = mean(followers_count), hours_to_collect = follower_count/5000/60)
+
+```
+Netflix hat fast 10 Millionen Follower, Disneyolus fast 2. Würden wir alle ziehen wollen, müssten wir uns mehrere Wochen gedulden, da pro 15 Minuten Fenster nur 15 Requests geschickt werden können und je request nur 5000 Follower zurückkommen.  In diesem Fall kneift uns das API Limit also schon ziemlich! Wir sollten uns also zunächst mal auf einige beschränken. Am einfachsten und saubersten ist es, wenn wir für jeden Account ein gleichgroßes sample ziehen, bspw. 5,000:
+
+```{r, eval = FALSE}
+#nicht ausführen!
+
+followers <- get_followers(keywords$account_name[1],n = 5000, retryonratelimit = T)  %>%
+  mutate(follows = keywords$account_name[1])
+
+
+
+for (i in 2:length(keywords$account_name)) {
+  
+  followers2 <- get_followers(keywords$account_name[i],n = 5000, retryonratelimit = T) %>%
+  mutate(follows = keywords$account_name[i])
+  
+  followers <- bind_rows(followers, followers2)
+  print(paste("Finished account", i, "of", length(keywords$account_name), sep=""))
+}
+#lade eine Hilfsfunktion um den rtweet Dataframe in eine per CSV speicherbare Variante zu speichern
+
+write_rds(followers, "streaming_services_followers5k.Rds")
+
+
+```
+
+Wir könnten jetzt schauen, inwiefern Überschneidungen bei den Followern zwischen den verschiedenen Diensten bestehen:
+
+```{r}
+
+followers %>% group_by(follows) %>% count(sort = T)
+followers %>% group_by(user_id) %>% count(sort=T)
+
+#wir könnten bspw. den pivot_wider Befehl benutzen um "one hot encoding" zu implementieren:
+follower_matrix <- followers %>% mutate(onehot = 1) %>% pivot_wider(names_from = follows, values_from = onehot)
+#und dann mit Filter arbeiten, um jeweils die gemeinsamen Follower zu zählen:
+follower_matrix %>% filter(disneyplus == 1, netflix == 1) %>% count()
+
+#es geht aber auch eleganter mit dem Paket "widyr":
+pairwise_count <- followers %>% widyr::pairwise_count(follows, user_id) %>% arrange(desc(n))
+
+#und können dann wiederum filtern nach den Beziehungen die uns interessieren:
+pairwise_count %>% filter(item1 == "netflix")
+
+```
+
+
+
+### Weitere Tweets von followern ziehen
+
+Von diesen followern könnten wir jetzt noch ebenfalls die 3200 letzten Tweets ziehen und würden damit auch gleichzeitig Informationen zu den Accounts bekommen. Wir sollten uns aber vorher grob überlegeb, wie viele Tweets das werden könnten! Da wir nur 900 requests in 15 Minuten machen dürfen und 200 tweets jeweils einen request kosten, würde es im schlimmsten Fall schon:
+
+```{r}
+length(followers$user_id)*3200 #Im schlimmsten Fall über 22 Millionen Tweets!
+length(followers$user_id)*3200/(200*900)*15/60/24 #dauert dann bis zu 13 Tage!
+```
+Wenn wir stattdessen pro Account nur 100 Follower betrachten und nur 200 Tweets pro Nutzer ziehen, wird es handhabbarer (es sei denn, rtweet macht wieder Probleme):
+
+```{r}
+#wir ziehen für jeden Account ein sample von 100 followern (vorher "HBOmaxNews rausnehmen, da gelöscht!)
+set.seed(1)
+followers_sample <- followers %>% filter(!follows == "HBOmaxNews") %>% group_by(follows) %>% sample_n(100)
+1500*200/(200*900)*15/60 #dauert "nur noch" eine halbe Stunde im worst case!
+```
+
+Ihr seht also, wie schnell man an die Grenzen des machbaren kommt (es sei denn man verwendet multiple Accounts etc., was allerdings gegen die Twitter Nutzungsbedingungen verstößt. Man munkelt aber es gebe sogar Dienste bei denen man sich hunderte Twitter Tokens kaufen und mieten kann...).
+
+```{r, eval = FALSE}
+
+followers_timelines <- get_timelines(followers_sample$user_id, n = 200)
+
+write_rds(followers_timelines, "followers_timelines.Rds")
+
+```
+
+
+Wenn ihr die Funktion oben durchlaufen lässt bekommt ihr häufig die Meldung "Not authorized", für diese Accounts lassen sich dann aus verschiedensten Gründen keine Tweets ziehen, bspw. weil das Profil auf "privat" gestellt wurde.
+
+Die Tweets der follower könnte man jetzt noch weiter betrachten, bspw. anhand der Hashtags schaunen, über welche Themen diese sonst noch so tweeten:
+
+```{r}
+followers_timelines %>% unnest(cols=c(hashtags)) %>% group_by(hashtags) %>% count(sort=T)
+```
+
+### Und noch vieles mehr
+
+Dies hier sollten einige beispielhafte Ansatzpunkte sein, welche man bei der Sammlung und Auswertung eines solchen Datensatzes verfolgen könnte. Man kann natürlich noch viel mehr machen, bspw. haben wir immer noch nicht die eigentliches Tweet-Daten (die Texte) betrachtet. Ebenso können beispielsweise verlinkte URLs sehr interessant sein, hierzu noch ein kurzer Ausflug:
+
+
+#### Die verschiedenen URL-Variablen
+
+Twitter-Objekte enthalten eine vielzahl von Variablen, die **URLs** enthalten. Die Variable `url` bezieht sich dabei auf die URL des Tweets selber (so kann man einzelne Tweets verlinken). Enthält ein Tweets URLs (er verlinkt also auf andere Inhalte), können wir diese über die etwas eigentümlich benannte Variable `urls_url` abrufen. Weiterhin gibt es noch `media_url`, welche eingebundene Medien (Bilder, Videos) verlinken. 
+
+```{r}
+timelines %>% unnest(cols = c(media_type)) %>% group_by(media_type) %>% count()
+timelines %>% unnest(cols = c(urls_url)) %>% group_by(urls_url) %>% count(sort=T)
+```
+Man kann zum Beispiel die verlinkten URLs nach ihrem Ziel sortieren (welche Website wird häufig verlinkt, welche Quellen wird häufig getweeted und geteilt etc.) und die verlinkten Websites natürlich auch noch scrapen (behandeln wir vllt. später noch, für interessierte ist [hier](https://dcl-wrangle.stanford.edu/rvest.html#scrape-data-with-rvest) eine ganz gute Anleitung.)
+
+
+Man kann übrigens auch die verlinkten Bilder laden, entweder als Array (so, wie ein Computer ein Bild "sieht") oder als Bild-Datei:
+
+```{r, eval = TRUE}
+#alle Tweets mit Fotos
+linked_imgs <- timelines %>% unnest(cols = c(media_type)) %>% filter(media_type == "photo")
+
+#der erstbeste Tweet mit Foto
+img_url <- linked_imgs[1,]$media_url %>% unlist()
+
+#es gibt verschiedene Pakete um mit Bildern zu arbeiten, bspw. "jpeg":
+library("jpeg")
+
+img <- readJPEG(RCurl::getURLContent(img_url))
+dim(img) #so sieht ein Bild für Computer aus
+
+#ich kann das Bilder aber auch ganz normal abspeichern:
+download.file(img_url,'img1.jpg', mode = 'wb')
+
+```
+
+
+
+
