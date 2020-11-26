@@ -1,0 +1,326 @@
+---
+title: "Arbeiten mit Textdaten"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Textanalyse}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rtweet)
+library(sentimentr)
+library(tidytext)
+```
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 16px;
+      color: #FFFFFF;
+      text-align: justify;
+      background-color: #4A525A;
+      
+  }
+h1.title {
+  font-size: 40px;
+  color: #DDDDDD;
+}
+h1 { /* Header 1 */
+  font-size: 30px;
+  color: #DDDDDD;
+}
+h2 { /* Header 2 */
+    font-size: 24px;
+  color: #DDDDDD;
+}
+h3 { /* Header 3 */
+  font-size: 20px;
+  color: #DDDDDD;
+}
+h4 { /* Header 4 */
+  font-size: 20px;
+  color: #DDDDDD;
+}
+code.r{ /* Code block */
+    font-size: 14px;
+    background-color: DarkRed;
+    blockquote: Green;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 16px;
+    color: Black;
+    background-color: LightGrey;
+    blockquote: Green;
+}
+td {  /* Table  */
+  font-size: 8px;
+  color: White
+}
+</style>
+
+## Der Oberbegriff: Natural Language Processing
+
+Textdaten stellen eine besondere Herausforderung für die automatisierte (lies: computergestützte) Verarbeitung dar, da sie ein Beispiel **unstrukturierter Daten** sind. Dies ist strenggenommen eine Lüge, da Texte in Sprachen verfasst werden und Sprachen verfolgen natürlich bestimmten Regeln, sind also strukturiert (sonst wäre Kommunikation nich möglich). Aus "Computer-Sicht", ist die Aussage aber richtig: Die Regeln, denen Sprachen folgen, sind so komplex und vielzählig dass selbst Menschen, die eine Sprache sprechen, diese nur unterbewusst verinnerlicht haben und selber nicht operationalisieren könnten. Deshalb gibt es einen kompletten Wissensschaftszweig, die Linguistik, welche sich damit befasst allgemeingültige Regeln der menschlichen Sprache, wie Grammatik und Syntax verschiedener Sprachen zu identifizieren. Es gibt eine Reihe von Ansätzen, welche es ermöglichen, Textdaten in einen "höheren" Grad der Strukturiertheit zu überführen, um letztendlich programmatisch mit diesen Arbeiten zu können, welche zusammen das Gebiet des *Natural Language Processing* (kurz NLP) bilden. Einige Kernaspekte des NLP werden im folgenden grob vorgestellt, stellen aber jeweils nicht getrennte Ansätze dar sondern bauen aufeinander auf.
+
+## Vokabular
+
+Zum besseren Verständnis hier eine kurze Erläuterung der (teilweise doppeldeutigen) Begrifflichkeiten, welche im folgenden oft fallen werden:
+  
+  - Token: Die jeweils kleinste verwendete Text-Einheit, kann ein Wort sein, aber auch Wortteil, Silbe oder Buchstabe!
+  - n-grams: Wortgebilde aus n tokens (Spezialfall 1 token: unigram)
+  - Sequenz: Aneinanderreihung mehrerer tokens (in der Regel Sätze natürlicher Sprache)
+  - Corpus: die größtmögliche Texteinheit die wir betrachten wollen (alle Textdaten gemeinsam genommen)
+
+
+## Problemfelder des NLP
+
+Die (Higher-Level) Problemfelder des NLP lassen sich grob zusammenfassen zu:
+
+
+  - Spracherkennung
+    - Von Audiosignalen: Speech-to-Text / Text-to-speech
+    - Von Handschrift: OCR
+  - Natural Language Understanding (Informationen aus Text ziehen)
+      - Textklassifizierung
+      - Unmasking ("Lückentexte aufüllen")
+      - Question-Answering
+  - Textgenerierung (Erzeugung neuer Texte)
+    - Übersetzung
+    - Weiterführung/Vervollständigung
+    - Zusammenfassung (summarization)
+
+Wir beschränken uns im weiteren größtenteils auf das Teilgebiet des NLP das für unsere Zwecke besonders relevant ist: Textklassifizierung (und da genauer: Sentiment Scoring).
+
+  
+## Methoden des NLP
+
+
+
+### Lexika
+
+Lexika bezeichnen im Bereich des NLP Wortschätze, welche gegebenen Worten einer natürlichen Sprache verschiedene Attribute zuordnen. Diese Metadaten können zum bsp. die Polarität (der Begriff wird später nochmal aufgegriffen) umfassen, aber auch Synonyme und "Rollen". Ein Wort könnte bspw:
+
+  - Negativ oder Positiv behaftet sein (Polarität)
+  - Synonym für ein anderes Wort sein
+  - eine grammatikalische Rolle einnehmen, bspw. als
+        - Negator (kehren die Wertigkeit des folgenden Wortes/der folgenden Wörter um: "Nicht gut", "Nicht schlecht")
+        - Amplifier (verstärken Wertigkeit des folgenden Wortes/der folgenden Wörter: "Sehr gut")
+        - De-Amplifier (schwächen Wertigkeit des folgenden Wortes/der folgenden Wörter ab: "weniger gut")
+        - Adversative Konjunktion (verändern die Wertigkeit des folgenden Teilsatzes: "aber", "dennoch", "trotzdem")
+        - (die obigen Fälle nennt man auch **valence shifter**)
+
+Das Hauptproblem solcher Lexika ist, dass diese eigentlich nie das gesamte "Problemfeld" abdecken können, da Wörter in vielerlei Hinsicht mehrfachdeutig sind. Deshalb gibt es verschiedene spezialisierte Lexika für verschiedene Zwecke, einige habt ihr bereits ohne es zu wissen benutzt bspw. beim Stemming und der Rechtschreibprüfung. Die Bedeutung von Wörtern ist aber auch darüber hinaus oft Kontextabhängig (so kann das Wort "verdammt" bspw. ein Ausruf der Frustration sein, aber auch als Amplifier fungieren uvm.). 
+
+
+### Regel-basierte Systeme
+
+Regelbasierte Systeme (englisch *rule-based*) wenden, wie der Name schon sagt, bekannte Regeln an um Informationen aus Texten zu ziehen. Einige der oben angesprochenen "Wortrollen" implizieren bereits solche Regeln (bspw. "wenn vor dem wort 'gut' ein 'nicht' steht, ist 'schlecht' gemeint), aber es sind natürlich auch komplexere Regeln möglich, beispielsweise "wenn sich ein Wort zwischen einem Artikel und einem Verb befindet, beschreibt es ein Subjekt". Mit einer Regel diese Art wäre es zum Beispiel möglich, festzustellen worauf sich eine Aussage bezieht. ^[Dies ist ein einfaches Beispiel für "named entity recognition", ebenfalls eine Anwendungs- und Forschungsgebiet des NLP] Andere Sprachmuster, wie bspw. Litotes (doppelte Verneinung), welche auch falsche Litotes ("hardly ain't had no murders in it") sein können, sind schon schwieriger in Regeln zu fassen.
+
+
+## Sentiment Analyse
+
+Bei der Analyse von Social Media Daten wie tweets und Kommentaren ist oft nicht nur deren Volumen von Relevanz, sondern auch und vor Allem was diese zum Ausdruck bringen. Ein wichtiger Aspekt ist dabei das sogenannte Sentiment, welches häufig synonym für Valenz oder Polarität verwendet wird. Der Begriff "Sentiment" ist aber ein abstrakter Begriff, welcher die in einem Stück Text ausgedrückte **Einstellung** des Verfassers auf das Objekt seiner Aussage abbilden soll. Je nach Bereich (Psychologie, Informatik) bezeichnet der Begriff aber teilweise unterschiedliche Aspekte. Grob zusammengefasst (aber ohne den Anspruch der universellen Gültigkeit) lassen sich die Begriffe wie folgt unterscheiden:
+
+  - Sentiment: abstrakt, mehrdimensionale Skala ("verärgert", "bewundernd", "zufrieden")
+  - Polarität: eindimensionale Skala (bspw. -1 bis 1, -unendlich bis + unendlich)
+  - Valenz: entweder äquivalent zu Polarität oder nominal skaliert ("positiv", "negativ", "neutral")
+  
+  Häufig sieht die "Hierarchie" so aus:
+  - Polarität auf einzelne Bestandteile bezogen
+  - aggregiertes Maß aus diesen Bestandteilen: Valenz
+  - Das was wir dadurch eigentlich bestimmen möchten: Sentiment
+
+Der Begriff Sentiment Analyse umfasst dabei eine Reihe von Ansätzen, um aus Textdaten die Einstellung des Verfassers zum Objekt zu indentifizieren bzw. zu quantifizieren. Wir betrachten zunächst die Berechnung der Polarität von Wort-Sequenzen ("polarity scoring").
+
+### Allgemeine Einfphrung in daas Arbeiten mit Textdaten
+
+Wenn wir allgemein mit Textdaten arbeiten, bspw. um tweets zu bereinigen, sind einige Pakete sehr hilfreich. Eines davon ist das `tidytext` Paket ( [hier](https://www.tidytextmining.com/index.html) findet ihr ein, wie ich finde, sehr gutes Buch dazu). In diesem sind beispielsweise sogenannte _stop words_ für die englische Sprache enthalten. Das sind Wörter die bspw. besonders häufig vorkommen und deshalb keine Aussagekraft beinhalten und für Analysen irrelevant sind.
+
+```{r}
+library(tidytext)
+
+data("stop_words")
+stop_words
+
+```
+
+Wir können uns den Unterschied veranschaulichen. Ohne Stopwords sehen wir ganz oben vor allem gängige Wörter der englischen Sprache wie "the", "to" usw.:
+
+```{r}
+tweets <- search_tweets("mac m1", 1000, lang = "en")
+tokenized_tweets <- tweets %>% select(status_id, text) %>% unnest_tokens(word, text)
+
+tokenized_tweets %>% count(word, sort = T)
+
+```
+
+Diese können wir entfernen, indem wir gegen eine Stop-Word Liste "gegenchecken", dies geht ganz gut mit dem anti-join() Befehl:
+
+```{r}
+tokenized_tweets %>% anti_join(stop_words) %>% count(word, sort = T)
+```
+
+
+Wie ihr seht, haben wir immer noch "Wörter" drin die wie "Beifang" aussehen: "https", "t.co", usw. Dies sind Twitter-spezifische "Wörter", die wir auch noch herausfiltern können indem wir bspw. eine maßgeschneiderte Liste mit stop words pflegen. 
+
+```{r}
+custom_stopwords <- tibble(lexicon = "custom", word = c("t.co", "https"))
+rtweet_stopwords <- rtweet::stopwordslangs
+```
+
+Wenn wir die Tweets einigermaßen bereinigt haben können wir uns schonmal eine schöne Wordcloud basteln:
+
+
+```{r}
+library(wordcloud)
+
+tokenized_tweets %>%
+  anti_join(stop_words) %>%
+  anti_join(custom_stopwords) %>%
+  anti_join(rtweet_stopwords) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 50))
+
+```
+
+### Polarity-scoring
+
+Für das Polarity-scoring existieren verschiedenste Ansätze, welche sich - wie bereits angesprochen - grob in zwei Überkategorien einteilen lassen: Lexikon-basierte und machine learning basierte. Im ersten Fall werden Lexika verwendet, welche von Menschen zusammengestellt wurden und Wörter oder Wortgebilde beinhalten, denen jeweils eine Polarität zugewiesen wurde. Wenn man dann einen gegebenen Text untersuchen möchte, wird einfach jedem Wort der zugehörige Polaritätswert zugewiesen und zu einem Gesamtscore des betrachteten Textes zusammengefasst (in der Realität ist es natürlich komplexer, es wird gewichtet und komplexere Zusammenhänge wie bspw. Negatoren ("nicht schlecht" etc.) werden berücksichtigt usw.). 
+
+Wir behandeln zunächst  Lexikon-basierte Ansätze wie sie bspw. im sentimentr Paket implementiert sind. 
+
+#### Das sentimentr Paket
+
+Das Paket `sentimentr` ([Rinker, 2019](https://github.com/trinker/sentimentr)) enthält verschiedene Funktionen, um polarity-scoring von Textdaten durchzuführen. Das Paket verfolgt dabei einen Lexikon-Ansatz, wobei neben einer Reihe von Polaritäts-Lexika auch eine Tabelle mit valence shiftern, sowie ein Emoji-Lexikon enthalten sind. Das Paket enthält außerdem verschiedene Hilfsfunktionen um Texte zu bereinigen und die Polarität visuell darzustellen. Weitere Features sind die Emotionserkennung über die `emotion()` Funktion, welche ebenfalls valence shifters mit einbezieht, sowie die `profanity()` Funktion um Schimpfwörter zu erkennen. Das Paket ist meines Erachtens wirklich gut gemacht und vor Allem performant, weil es Hash-tables verwendet und in C implementiert ist. Im folgenden scoren wir die bereits zuvor gesammelten Tweets, das Standardlexikon für die Polarität ist dabei das [syuzhet](https://github.com/mjockers/syuzhet) Lexikon, man kann auch zum Vergleich die Lexika [afinn](http://www2.imm.dtu.dk/pubdb/views/publication_details.php?id=6010), [bing](http://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html) und [nrc](http://saifmohammad.com/WebPages/lexicons.html) verwenden.
+
+```{r}
+
+tweet_sentiment <- get_sentences(tweets$text) %>% sentiment_by()
+
+head(tweet_sentiment)
+
+
+```
+
+
+Ich kann mir die Tweets mit markiertem Sentiment anzeigen lassen, so kann ich sehen was mir das Programm wie gekeinnzeichnet hat und die Güte einschätzen:
+
+```{r, eval = FALSE}
+sentimentr::highlight(tweet_sentiment)
+
+```
+
+Wie ihr seht funktioniert es manchmal gut, manchmal weniger gut. Wenn es uns bspw. nur darum geht, Unterschiede in **aggregiertem** Sentiment zu betrachten, solange wir zumindest davon ausgehen können, dass alle Werte mit gleicher Wahrscheinlichkeit in die selbe Richtung verzerrt sind. Letzteres ist insbesondere dann nicht der Fall, wenn unser Untersuchungsgegenstand Wörter beinhaltet die selber ein Polaritätsscoring besitzen (bei Filmen etc. oft der Fall). Diese müsste man dann vor dem Scoring entfernen. Um wirklich aussagekräftigere Ergebnisse zu bekommen müsste man die Tweets natürlich noch erheblicher bereinigen. Wie in allen Belangen des Lebens gilt auch hier "garbage in, garbage out".
+
+
+#### Emotions-Erkennung
+
+Wie bereits erwähnt enthält das Paket auch ein Emotions-Lexikon, sowie verschiedene Funktionen, die Art der Emotion die in einem Text zum Ausdruck kommen zu identifizieren bzw. im Aggregat zu quantifizieren. So können wir bspw. unsere Tweets nehmen, jeweils emotionale Wörter zählen und uns ein Gesamt bild über die Häufigkeit der verschiedenen Emotionen machen:
+
+```{r}
+sentimentr::emotion_by(tweets$text) %>% group_by(emotion_type) %>% 
+  summarize(emotion_count = sum(emotion_count)) %>% arrange(desc(emotion_count))
+```
+
+#### Schimpfwort-Erkennung
+
+Analog zur Emotionserkennung wird auch die Erkennung von vulgärer Sprache (englisch "profanity") unterstützt:
+
+```{r}
+profanity(tweets$text) %>% arrange(desc(profanity_count))
+
+```
+
+
+#### Andere Funktionen
+
+Das Sentimentr Paket beinhaltet noch eine Reihe weiterer Funktionen die mir im Umgang mit Sentiment-gescoreten Texten erleichtern können. Bspw. kann ich mir das Sentiment über die Länge des Textes anzeigen lassen (was bei Tweets nicht wirklich viel Sinn ergibt):
+
+```{r}
+plot(tweet_sentiment)
+```
+
+
+
+
+
+
+
+
+## Machine Learning Modelle
+
+Wir machen jetzt noch einen kurzen Ausflug in den Bereich des maschinellen Lernens. Dieser dient vor Allem zu eurer Information und um euch zu zeigen, was mit dem heutigen Stand der Technik möglich ist.
+
+Der machine learning Ansatz betrachtet nicht einzelne Wörter sondern Textgebilde. Dabei werden Modelle trainiert, welche Wort-Sequenzen als Input erhalten und diese auf verschienste Outputs (bspw. Themen, Polarität etc.) mappen. Dies wird erreicht, indem Modelle **trainiert** werden. Diese Modelle können unterschiedliche **Architekturen** haben:
+
+  - Simple Ansätze: bag-of-words Modelle (in R relativ simpel machbar)
+  - Basierend auf Wort-Vektoren (word-embeddings):
+    - word2vec (ebenfalls in R machbar)
+    - GloVe
+    - ELMo (Kontext-sensitiv)
+  - Basierend auf neuronalen Netzen (**Deep Learning**): 
+    - rNN: recurrent Neural Networks
+      - LSTM: long short-term memory
+    - Transformer Modelle
+  - andere Methoden, die nicht ganz ins Schema passen:
+    - Latent Dirichlet Allocation
+
+
+Dabei ist weiterhin grob zu unterscheiden zwischen **supervised learning** und **unsupervised learning**. 
+
+### Supervised Learning
+
+Supervised learning benötigt sogenannte **gelabelte** Daten, das heißt bei Sprachmodellen Datensätze, welche Texte (können bspw. Tweets sein) und zugehörige label (können kategorial sein bspw. "positiv", "negativ", "wütend", oder auch metrisch skaliert) enthalten. Das Problem ist, dass hier sehr sehr viele "Beispiele" benötigt werden, die eben gelabelt sein müssen. Beim labeln weisen menschliche "Kodierer" Textbeispielen Polaritätswerte zu, damit später ein Modell auf diese trainiert werden kann, diese Werte vorherzusagen (wenn ihr bereits MI gehört habt: im Prinzip genau wie bei Logit Modellen). Der Nachteil ist, dass hierfür riesige Mengen solcher "gelabelter" Beobachtungen von Nöten sind um eine einigermaßen gute Vorhersagegüte zu bekommen und Menschen gar nicht mal so gut sind, die Polarität von Texten einigermaßen zuverlässig und konsistent zu identifizieren und zusammenzufassen.
+
+### Unsupervised Learning
+
+Beim unsupervised learning werden keine gelabelten Daten benötigt. Bei Sprachmodellen die hierauf basieren werden zum Beispiel keine labels vorhergesagt, sondern bspw. das nächste Wort in einer Sequenz. Der Satz "ich bin ein guter Eis-Hockey" wäre dann bspw. ein Datenpunkt und das Wort "Spieler" das label. Das ganze kann also automatisch passieren, ich brauche nur eine große Menge an Daten (trivial) und jede Menge Rechenleistung (sehr teuer) und/oder Geduld um akzeptable Ergebnisse zu bekommen. Die derzeit besten Sprachmodelle sind genau solche Modelle, welche auf der Transformer-Architektur beruhen. Diese benutzen ein Konzept, dass sich **attention** (also Aufmerksamkeit) nennt. Grob zusammengefasst haben Sprachmodelle immer das Problem, dass nur eine begrenzte Anzahl an **tokens** verwendet werden können um ein gegebenes weiteres token vorherzusagen. Der attention-Mechanismus (wie zuvor bereits der LSTM Mechanismus) erhöhen die Anzahl an tokens die in die Vorhersage mit einfließen können und ermöglichen es - in Verbindung mit gestiegener Rechenleistung u.A. durch erwendung beschleunigter Hardware wie GPUs und TPUS - mitunter riesige Modelle zu trainieren, welche eine gegebene Sprache, wie englisch, teilweise sehr sehr gut abbilden können.
+  
+Diese **general language models** sind so gut, dass sie auf spezielle Tasks spezialisiert werden können (**re-training**). Das erlaubt es, sehr gut funktionierende, spezialisierte Modelle zu trainieren, mit vergleichsweise winzigem Aufwand gegenüber dem Training von Null auf.
+
+
+#### General Language Models
+
+Dabei bilden derzeit die oben kurz angesprochenen Transformer-Modelle in mittlerweile allen Bereichen des NLP den state-of-the-art. Dies liegt vor Allem daran, dass solche Modelle **context** abbilden können. Die schiere Rechenleistung und Expertise die benötigt werden, um Modelle dieser Größe zu entwickeln und trainieren, schränken die Anzahl der Spieler auf diesem Gebiet ziemlich ein:
+
+  - OpenAI mit der GPT-Familie
+    - GPT (2018) war das erste Transformer Modell^[zeitgleich mit BERT entwickelt, aber zuerst veröffentlicht]
+    - GPT-2 (2019): Hat große Wellen geschlagen ("Zu gefährlich um es zu veröffentlichen")
+      - es gibt verschieden große GPT-2 Modelle: 355M, 774M, 1.5B (passt so eben in den RAM einer 1080ti mit overhead)
+    - GPT-3: 175 Milliarden (!!) Parameter
+      - basierte auf einem reinen Experiment: was passiert wenn wir einfach nur die Parameter erhöhen bei einem eigentlich schlechten Modell?
+      - funktioniert viel besser als je Jemand erwartet hätte (viel Diskussion darum)
+      - ihr könntet es nicht laufen lassen, selbst wenn ihr dürftet (es ist proprietär), es sei denn ihr habt irgendwo ~700GB RAM rumliegen
+      - Ihr könnt es aber in Form eines [Text-Adventures](https://play.aidungeon.io/) ausprobieren
+      - könnte Ära des anderen NLP (Natural Language Programming) [einläuten](https://twitter.com/sharifshameem/status/1284095222939451393?lang=de)
+  - Google mit BERT (2018)
+    - BERT benutzt jeder von euch vermutlich täglich, da es vor einiger Zeit in die Google-Suche implementiert wurde
+    - außerdem T5 (2019), Transformer-XL (2019)...
+  - Facebook mit BART, verschiedenen BERT-Varianten und XLM mit Varianten 
+  - Außerdem: Microsoft, AllenAI
+
+
+Es gibt derzeit leider keine Möglichkeit, aus R heraus mit solchen Modellen zu Arbeiten. Es gibt mittlerweile Interfaces für Tensorflow ([keras Paket](https://keras.rstudio.com)) und - ganz neu -  [torch](https://blog.rstudio.com/2020/09/29/torch/), also die beiden großen Deep Learning libraries. Man kann also direkt mit R Deep Learning Modelle bauen und trainieren. Die obigen Modelle sind allerdings in Python implementiert und lassen sich dementsprechend noch nicht direkt nutzen, sondern nur über das reticulate Paket (was ich bisher noch nicht ans Laufen bekommen habe).
+
+Es gibt in letzter Zeit einige Bewegungen, welche es immer einfacher werden lassen mit solch riesigen und komplexen modellen zu Arbeiten. Ein Beispiel ist die [Huggingface Library](https://github.com/huggingface/transformers) für Python, welche ein sehr simples Interface für verschiedenste Transformer Modelle und **downstream tasks** bietet. Wir machen einen kurzen Exkurs und vergleichen die Performance des BERT-Modells mit der des sentimentr Pakets bei einem recht schwierigen Beispiel und anderen Fällen, bei denen BERT hingegen schlecht funkioniert:
+
+```{r}
+artikel <- "(Bloomberg) -- Netflix Inc. was downgraded to neutral from buy at UBS, which cited valuation after a pronounced rally in the video-streaming company.Thus far this year, Netflix is up nearly 60%, making it one of the best performers in the S&P 500, which is down 3% for 2020. The stock has also gained about 70% off a March low, a rally that has lifted it to repeated records and widened the company's market cap lead over Walt Disney Co.Shares fell as much as 6.7% on Tuesday, Netflix's biggest one-day intraday decline since March"
+
+sentiment(artikel)#Sentimentr: positiv/neutral, BERT: negativ, BART (zero-shot): neutral
+
+headline1 <- "Kodak's stock nearly triples after report of $765 million government loan to help produce generic drugs"
+sentiment(headline1) #Sentimentr: negativ, BERT:negativ mit hoher Konfidenz, BART(zero-shot): positiv mit hoher Konfidenz
+
+headline2 <- "Kodak Stock Skyrockets After Deal To Make Drug Ingredients"
+sentiment(headline2)#Sentimentr: leicht positiv, BERT: negativ (hoher score), BART:positiv (hohe Konfidenz)
+
+headline3 <- "Tiny Arbutus Biopharma Wins Patent Litigation Fight with COVID-19 Vaccine Implications"
+sentiment(headline3)#negativ
+
+```
+
+
+

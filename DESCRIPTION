@@ -19,7 +19,10 @@ Imports:
     sentimentr,
     devtools,
     nycflights13,
-    jsonlite
+    jsonlite,
+    tidytext,
+    wordcloud
+    
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)
